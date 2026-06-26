@@ -365,13 +365,9 @@
 #define CCALL_HANDLE_REGARG \
   if (LJ_TARGET_OSX && isva) { \
     /* IOS: All variadic arguments are on the stack. */ \
-    } else if (LJ_ABI_ARM64EC && cc->x64) { \
+  } else if (LJ_ABI_ARM64EC && cc->x64) { \
     /* Windows/x64 argument registers are strictly positional (use ngpr). */ \
-    if (isfp) { \
-      if (ngpr < maxgpr) { dp = &cc->fpr[ngpr++]; nfpr = ngpr; goto done; } \
-    } else { \
-      if (ngpr < maxgpr) { dp = &cc->gpr[ngpr++]; goto done; } \
-    } \
+    if (ngpr < maxgpr) { dp = &cc->gpr[ngpr++]; goto done; } \
   } else if (isfp) {  /* Try to pass argument in FPRs. */ \
     int n2 = ctype_isvector(d->info) ? 1 : \
 	     isfp == 1 ? n : (d->size >> (4-isfp)); \
@@ -1392,11 +1388,6 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
       else
 	cc->fpr[ngpr-1].l[0] = cc->gpr[ngpr-1];
     }
-#elif LJ_TARGET_ARM64 && LJ_ABI_ARM64EC
-    if (cc->x64 && isfp && ngpr > 0) {  /* ARM64EC x64: mirror FP args into GPR slot too. */
-      cc->gpr[ngpr-1] = cc->fpr[ngpr-1].l[0];
-    }
-    UNUSED(isva);
 #else
     UNUSED(isva);
 #endif
