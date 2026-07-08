@@ -632,7 +632,9 @@ AArch64ConditionOptimizerImpl::findSelectConsumer(MachineBasicBlock *MBB) {
   return {Found, FoundCC};
 }
 
-// Optimizes CMP+Bcc pairs across two basic blocks in the dominator tree.
+// Optimizes CMP+conditional pairs across two basic blocks in the dominator
+// tree. The conditional consumer in each block may be a Bcc terminator or a
+// select-family instruction (CSEL/CSET/CSINC/CSINV/CSNEG).
 bool AArch64ConditionOptimizerImpl::optimizeCrossBlock(MachineBasicBlock &HBB) {
   SmallVector<MachineOperand, 4> HeadCondOperands;
   MachineBasicBlock *TBB = nullptr, *FBB = nullptr;
@@ -643,14 +645,13 @@ bool AArch64ConditionOptimizerImpl::optimizeCrossBlock(MachineBasicBlock &HBB) {
   if (!TBB || TBB == &HBB)
     return false;
 
-  SmallVector<MachineOperand, 4> TrueCondOperands;
-  MachineBasicBlock *TBB_TBB = nullptr, *TBB_FBB = nullptr;
+    SmallVector<MachineOperand, 4> TrueCondOperands;
   // analyzeBranch may fail for a select-headed true-successor (no conditional
   // branch). TrueCondOperands is only needed when TBB ends with a Bcc, and in
   // that case analyzeBranch will succeed. When it fails we fall through to
   // findSelectConsumer below.
   bool TBBAnalyzed =
-      !TII->analyzeBranch(*TBB, TBB_TBB, TBB_FBB, TrueCondOperands);
+      !TII->analyzeBranch(*TBB, nullptr, nullptr, TrueCondOperands);
 
   // Find the conditional consumer in the head block.
   // First try a Bcc terminator (the original path). If the block ends with a
