@@ -645,13 +645,14 @@ bool AArch64ConditionOptimizerImpl::optimizeCrossBlock(MachineBasicBlock &HBB) {
   if (!TBB || TBB == &HBB)
     return false;
 
-    SmallVector<MachineOperand, 4> TrueCondOperands;
+  SmallVector<MachineOperand, 4> TrueCondOperands;
   // analyzeBranch may fail for a select-headed true-successor (no conditional
   // branch). TrueCondOperands is only needed when TBB ends with a Bcc, and in
   // that case analyzeBranch will succeed. When it fails we fall through to
-  // findSelectConsumer below.
+  // findSelectConsumer below. The TBB branch targets are not needed here.
+  MachineBasicBlock *TBBDest = nullptr, *TBBFallthrough = nullptr;
   bool TBBAnalyzed =
-      !TII->analyzeBranch(*TBB, nullptr, nullptr, TrueCondOperands);
+      !TII->analyzeBranch(*TBB, TBBDest, TBBFallthrough, TrueCondOperands);
 
   // Find the conditional consumer in the head block.
   // First try a Bcc terminator (the original path). If the block ends with a
