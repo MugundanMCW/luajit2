@@ -22,14 +22,9 @@ import shlex
 import subprocess
 import sys
 
-# All platforms that the checked-in lock files must cover.  This ensures uv
-# emits per-platform wheel entries with sys_platform / platform_machine markers
-# for packages that ship native wheels (e.g. ml-dtypes, numpy, scipy).
-# Without explicit platform flags, --universal collapses those packages into a
-# flat hash list with no markers, which causes PipStar
-# (RULES_PYTHON_ENABLE_PIPSTAR=1) to produce an empty BUILD file for any
-# platform not seen during resolution (e.g. windows_aarch64).
-ALL_PLATFORMS = [
+# Valid uv --python-platform target triples that are relevant to JAX.
+# Used for documentation / validation in --platforms help text.
+KNOWN_PLATFORMS = [
     "x86_64-pc-windows-msvc",
     "aarch64-pc-windows-msvc",
     "x86_64-unknown-linux-gnu",
@@ -54,7 +49,7 @@ COMMON_SRCS = [
 
 
 def update_requirements(py_ver, nightly=False, upgrade=True, dry_run=False,
-                        platforms=None):
+                        platform=None):
     if py_ver not in PYTHON_VERSIONS:
         print(f"Error: Unsupported Python version {py_ver}")
         sys.exit(1)
@@ -76,17 +71,31 @@ def update_requirements(py_ver, nightly=False, upgrade=True, dry_run=False,
             print(f"Error: Input file {src} does not exist.")
             sys.exit(1)
 
-    # 2. Construct uv pip compile command
-    cmd = ["uv", "pip", "compile", "--no-strip-extras", "--universal"]
+    # 2. Construct uv pip compile command.
+    #
+    # --universal and --python-platform are mutually exclusive in uv:
+    #
+    #   --universal          Resolve for ALL platforms at once. uv emits
+    #                        per-platform wheel entries with sys_platform /
+    #                        platform_machine markers automatically. This is
+    #                        what the checked-in lock files must use so that
+    #                        PipStar (RULES_PYTHON_ENABLE_PIPSTAR=1) can select
+    #                        the right wheel on every platform, including
+    #                        windows_aarch64.
+    #
+    #   --python-platform T  Resolve for ONE specific target triple T only.
+    #                        Produces a smaller lock file with hashes only for
+    #                        that platform. Useful for local Windows ARM64
+    #                        iteration but must NOT be checked in, because it
+    #                        will break CI on other platforms.
+    cmd = ["uv", "pip", "compile", "--no-strip-extras"]
 
-    # Emit per-platform wheel entries so PipStar can select the right wheel
-    # for each target platform (including windows-aarch64).
-    # Pass --platforms windows-aarch64 on the CLI to generate a minimal lock
-    # file that only contains hashes for that one platform, skipping all the
-    # Linux / macOS / x86 hashes that are irrelevant for a Windows ARM64 build.
-    target_platforms = platforms if platforms is not None else ALL_PLATFORMS
-    for platform in target_platforms:
+    if platform:
+        # Single-platform mode: drop --universal, use --python-platform.
         cmd.extend(["--python-platform", platform])
+    else:
+        # Universal mode: resolve for all platforms at once.
+        cmd.append("--universal")
 
     # Add inputs and output
     cmd.extend(srcs)
@@ -128,7 +137,22 @@ def update_requirements(py_ver, nightly=False, upgrade=True, dry_run=False,
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Update JAX requirements_lock files using uv"
+        description="Update JAX requirements_lock files using uv",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Regenerate all lock files for all platforms (use for checked-in files):
+  python build/update_requirements_uv.py
+
+  # Fast local iteration: only resolve for Windows ARM64, skip all other hashes:
+  python build/update_requirements_uv.py --platform aarch64-pc-windows-msvc
+
+  # Dry-run to see the uv command without executing:
+  python build/update_requirements_uv.py --platform aarch64-pc-windows-msvc --dry-run
+
+NOTE: --platform produces a single-platform lock file. Do NOT check it in;
+always regenerate without --platform before committing.
+""",
     )
     parser.add_argument(
         "--nightly",
@@ -147,17 +171,18 @@ def main():
         help="Print the command that would be run without executing it.",
     )
     parser.add_argument(
-        "--platforms",
-        nargs="+",
+        "--platform",
         metavar="PLATFORM",
         default=None,
         help=(
-            "Restrict resolution to these uv platform strings "
-            "(e.g. --platforms windows-aarch64). "
-            "Defaults to all platforms: " + ", ".join(ALL_PLATFORMS) + ". "
-            "Use this to generate a minimal lock file for a single target "
-            "(e.g. Windows ARM64 CI) without pulling hashes for every other "
-            "platform."
+            "Resolve for a single uv platform triple only "
+            "(e.g. aarch64-pc-windows-msvc). "
+            "Drops --universal and passes --python-platform to uv. "
+            "Produces a smaller lock file with hashes only for that platform. "
+            "Useful for local Windows ARM64 iteration. "
+            "Do NOT check in the result; use the default (no --platform) for "
+            "files that are committed to the repo. "
+            "Known values: " + ", ".join(KNOWN_PLATFORMS) + "."
         ),
     )
     parser.set_defaults(upgrade=True)
@@ -188,7 +213,7 @@ def main():
             nightly=args.nightly,
             upgrade=args.upgrade,
             dry_run=args.dry_run,
-            platforms=args.platforms,
+            platform=args.platform,
         )
 
 
