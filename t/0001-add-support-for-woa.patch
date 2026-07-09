@@ -1,0 +1,353 @@
+From b9c50f49a22cedf865f7720e5f6f9b54eeca0515 Mon Sep 17 00:00:00 2001
+From: Muguqti <mselvana@qti.qualcomm.com>
+Date: Thu, 9 Jul 2026 11:57:36 +0530
+Subject: [PATCH] add support for woa
+
+---
+ .bazelrc                                      | 37 ++++++++++++++
+ configure.py                                  |  8 ++++
+ tensorflow/BUILD                              | 30 ++++++++++++
+ .../tools/toolchains/win2022/20260322/BUILD   | 48 ++++++++++++-------
+ tensorflow/tools/toolchains/win2022/BUILD     | 21 ++++++++
+ third_party/xla/xla/tsl/BUILD                 | 26 +++++++++-
+ 6 files changed, 152 insertions(+), 18 deletions(-)
+
+diff --git a/.bazelrc b/.bazelrc
+index c3145bd8e3b..29b77282296 100644
+--- a/.bazelrc
++++ b/.bazelrc
+@@ -560,7 +560,27 @@ common:win_clang --extra_toolchains=@local_config_cc//:cc-toolchain-x64_windows-
+ common:win_clang --extra_execution_platforms=//tensorflow/tools/toolchains/win:x64_windows-clang-cl
+ common:win_clang --host_platform=//tensorflow/tools/toolchains/win:x64_windows-clang-cl
+ 
++common:win_arm64_clang --config=win_clang_base
++common:win_arm64_clang --config=clang_local
++common:win_arm64_clang --cpu=arm64_windows
++common:win_arm64_clang --extra_toolchains=@local_config_cc//:cc-toolchain-arm64_windows-clang-cl
++common:win_arm64_clang --extra_execution_platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64
++common:win_arm64_clang --host_platform=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64
++common:win_arm64_clang --platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64
++common:win_arm64_clang --linkopt=/MACHINE:ARM64
++common:win_arm64_clang --host_linkopt=/MACHINE:ARM64
++common:win_arm64_clang --define=tensorflow_mkldnn_contraction_kernel=0
++common:win_arm64_clang --define=xnn_enable_avxvnniint8=false
++common:win_arm64_clang --define=xnn_enable_avx512fp16=false
++common:win_arm64_clang --define=no_nccl_support=true
++common:win_arm64_clang --repo_env=TF_NEED_CUDA=0
++common:win_arm64_clang --repo_env=TF_NEED_ROCM=0
++common:win_arm64_clang --action_env=CLANG_COMPILER_PATH="C:/Program Files/LLVM/bin/clang-cl.exe"
++common:win_arm64_clang --repo_env=CC="C:/Program Files/LLVM/bin/clang-cl.exe"
++common:win_arm64_clang --repo_env=BAZEL_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe"
++
+ common:windows_x86_cpu_2022 --config=win_clang_base
++
+ common:windows_x86_cpu_2022 --crosstool_top="//tensorflow/tools/toolchains/win2022/20241118:toolchain"
+ common:windows_x86_cpu_2022 --extra_toolchains="//tensorflow/tools/toolchains/win2022/20241118:cc-toolchain-x64_windows-clang-cl"
+ common:windows_x86_cpu_2022 --extra_execution_platforms="//tensorflow/tools/toolchains/win2022:windows_ltsc2022_clang"
+@@ -863,7 +883,24 @@ common:release_cpu_windows --config=release_base
+ common:release_cpu_windows --config=avx_win
+ common:release_cpu_windows --define=no_tensorflow_py_deps=true
+ 
++# Native Windows ARM64 CPU build. Do not inherit release_cpu_windows because it
++# enables x86-only AVX flags.
++common:release_cpu_windows_arm64 --config=release_base
++common:release_cpu_windows_arm64 --config=win_arm64_clang
++common:release_cpu_windows_arm64 --define=no_tensorflow_py_deps=true
++common:release_cpu_windows_arm64 --define=with_xla_support=false
++common:release_cpu_windows_arm64 --deleted_packages=tensorflow/compiler/aot,tensorflow/compiler/jit
++
++# Minimal native Windows ARM64 CPU wheel build for bring-up.
++common:release_cpu_windows_arm64_minimal --config=release_cpu_windows_arm64
++common:release_cpu_windows_arm64_minimal --config=nogcp
++common:release_cpu_windows_arm64_minimal --config=nonccl
++common:release_cpu_windows_arm64_minimal --define=disable_tf_lite_py=true
++common:release_cpu_windows_arm64_minimal --define=with_tpu_support=false
++common:release_cpu_windows_arm64_minimal --deleted_packages=tensorflow/core/tpu,tensorflow/compiler/tf2tensorrt,tensorflow/lite,tensorflow/go,tensorflow/java
++
+ # Exclude TFRT integration for anything but Linux.
++
+ common:android --config=no_tfrt
+ common:macos   --config=no_tfrt
+ common:windows --config=no_tfrt
+diff --git a/configure.py b/configure.py
+index 6711ff9df60..afede42af84 100644
+--- a/configure.py
++++ b/configure.py
+@@ -78,6 +78,11 @@ def is_s390x():
+   return platform.machine() == 's390x'
+ 
+ 
++def is_arm64():
++  machine = platform.machine().lower()
++  return machine in ('aarch64', 'arm64')
++
++
+ def is_cygwin():
+   return platform.system().startswith('CYGWIN_NT')
+ 
+@@ -456,10 +461,13 @@ def set_cc_opt_flags(environ_cp):
+   if is_ppc64le():
+     # gcc on ppc64le does not support -march, use mcpu instead
+     default_cc_opt_flags = '-mcpu=native'
++  elif is_windows() and is_arm64():
++    default_cc_opt_flags = '/O2'
+   elif is_windows():
+     default_cc_opt_flags = '/arch:AVX'
+   else:
+     # On all other platforms, no longer use `-march=native` as this can result
++
+     # in instructions that are too modern being generated. Users that want
+     # maximum performance should compile TF in their environment and can pass
+     # `-march=native` there.
+diff --git a/tensorflow/BUILD b/tensorflow/BUILD
+index ab323b8d6be..37fb3453a10 100644
+--- a/tensorflow/BUILD
++++ b/tensorflow/BUILD
+@@ -428,8 +428,36 @@ config_setting(
+     visibility = ["//visibility:public"],
+ )
+ 
++config_setting(
++    name = "windows_aarch64",
++    constraint_values = [
++        "@platforms//cpu:aarch64",
++        "@platforms//os:windows",
++    ],
++    visibility = ["//visibility:public"],
++)
++
++config_setting(
++    name = "windows_arm64",
++    constraint_values = [
++        "@platforms//cpu:arm64",
++        "@platforms//os:windows",
++    ],
++    visibility = ["//visibility:public"],
++)
++
++selects.config_setting_group(
++    name = "windows_arm64_any",
++    match_any = [
++        ":windows_aarch64",
++        ":windows_arm64",
++    ],
++    visibility = ["//visibility:public"],
++)
++
+ config_setting(
+     name = "no_tensorflow_py_deps",
++
+     define_values = {"no_tensorflow_py_deps": "true"},
+     visibility = ["//visibility:public"],
+ )
+@@ -653,6 +681,7 @@ selects.config_setting_group(
+     match_any = [
+         "@platforms//cpu:aarch32",
+         "@platforms//cpu:aarch64",
++        "@platforms//cpu:arm64",
+         "@platforms//cpu:armv6-m",
+         "@platforms//cpu:armv7",
+         "@platforms//cpu:armv7-m",
+@@ -661,6 +690,7 @@ selects.config_setting_group(
+     ],
+ )
+ 
++
+ config_setting(
+     name = "freebsd",
+     constraint_values = [
+diff --git a/tensorflow/tools/toolchains/win2022/20260322/BUILD b/tensorflow/tools/toolchains/win2022/20260322/BUILD
+index aa7047428a7..bc324177004 100644
+--- a/tensorflow/tools/toolchains/win2022/20260322/BUILD
++++ b/tensorflow/tools/toolchains/win2022/20260322/BUILD
+@@ -567,6 +567,7 @@ cc_toolchain(
+     toolchain_identifier = "clang_cl_arm64",
+ )
+ 
++# buildifier: disable=platform-specific-binaries
+ cc_toolchain_config(
+     name = "clang_cl_arm64",
+     abi_libc_version = "local",
+@@ -574,29 +575,41 @@ cc_toolchain_config(
+     archiver_flags = ["/MACHINE:ARM64"],
+     compiler = "clang-cl",
+     cpu = "arm64_windows",
+-    cxx_builtin_include_directories = [],
++    cxx_builtin_include_directories = [
++        "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\include",
++        "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\VS\\include",
++        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt",
++        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\um",
++        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\shared",
++        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\winrt",
++        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\cppwinrt",
++        "C:\\Program Files\\LLVM\\lib\\clang\\21\\include",
++    ],
+     dbg_mode_debug_flag = "/DEBUG",
+-    default_link_flags = ["/MACHINE:ARM64"],
++    default_link_flags = [
++        "/MACHINE:ARM64",
++        "/DEFAULTLIB:clang_rt.builtins-aarch64.lib",
++    ],
+     fastbuild_mode_debug_flag = "/DEBUG",
+     host_system_name = "local",
+-    msvc_cl_path = "vc_installation_error_arm64.bat",
+-    msvc_env_include = "clang_cl_not_found",
+-    msvc_env_lib = "clang_cl_not_found",
+-    msvc_env_path = "clang_cl_not_found",
+-    msvc_env_tmp = "clang_cl_not_found",
+-    msvc_lib_path = "vc_installation_error_arm64.bat",
+-    msvc_link_path = "vc_installation_error_arm64.bat",
+-    msvc_ml_path = "vc_installation_error_arm64.bat",
+-    supports_parse_showincludes = False,
++    msvc_cl_path = "C:/Program Files/LLVM/bin/clang-cl.exe",
++    msvc_env_include = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\include;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Auxiliary\\VS\\include;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\ucrt;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\um;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\shared;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\winrt;C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.26100.0\\cppwinrt;C:\\Program Files\\LLVM\\lib\\clang\\21\\include",
++    msvc_env_lib = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\lib\\arm64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\ucrt\\arm64;C:\\Program Files (x86)\\Windows Kits\\10\\lib\\10.0.26100.0\\um\\arm64;C:\\Program Files\\LLVM\\lib\\clang\\21\\lib\\windows",
++    msvc_env_path = "C:\\Program Files\\LLVM\\bin;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.44.35207\\bin\\Hostarm64\\arm64;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\VC\\VCPackages;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TestWindow;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\CommonExtensions\\Microsoft\\TeamFoundation\\Team Explorer;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\bin\\Roslyn;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\arm64;C:\\Program Files (x86)\\Windows Kits\\10\\bin\\arm64;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\MSBuild\\Current\\Bin\\arm64;C:\\Windows\\system32;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\IDE\\;C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\Common7\\Tools",
++    msvc_env_tmp = "C:\\TMP",
++    msvc_lib_path = "C:/Program Files/LLVM/bin/llvm-lib.exe",
++    msvc_link_path = "C:/Program Files/LLVM/bin/lld-link.exe",
++    msvc_ml_path = "C:/Program Files/LLVM/bin/clang-cl.exe",
++    supports_parse_showincludes = True,
+     target_libc = "msvcrt",
+     target_system_name = "aarch64-pc-windows-msvc",
+     tool_paths = {
+-        "ar": "vc_installation_error_arm64.bat",
+-        "ml": "vc_installation_error_arm64.bat",
+-        "cpp": "vc_installation_error_arm64.bat",
+-        "gcc": "vc_installation_error_arm64.bat",
++        "ar": "C:/Program Files/LLVM/bin/llvm-lib.exe",
++        "ml": "C:/Program Files/LLVM/bin/clang-cl.exe",
++        "cpp": "C:/Program Files/LLVM/bin/clang-cl.exe",
++        "gcc": "C:/Program Files/LLVM/bin/clang-cl.exe",
+         "gcov": "wrapper/bin/msvc_nop.bat",
+-        "ld": "vc_installation_error_arm64.bat",
++        "ld": "C:/Program Files/LLVM/bin/lld-link.exe",
+         "nm": "wrapper/bin/msvc_nop.bat",
+         "objcopy": "wrapper/bin/msvc_nop.bat",
+         "objdump": "wrapper/bin/msvc_nop.bat",
+@@ -605,9 +618,11 @@ cc_toolchain_config(
+     toolchain_identifier = "clang_cl_arm64",
+ )
+ 
++
+ toolchain(
+     name = "cc-toolchain-arm64_windows-clang-cl",
+     exec_compatible_with = [
++        "@platforms//cpu:arm64",
+         "@platforms//os:windows",
+         "@bazel_tools//tools/cpp:clang-cl",
+     ],
+@@ -619,6 +634,7 @@ toolchain(
+     toolchain_type = "@bazel_tools//tools/cpp:toolchain_type",
+ )
+ 
++
+ cc_toolchain(
+     name = "cc-compiler-armeabi-v7a",
+     all_files = ":empty",
+diff --git a/tensorflow/tools/toolchains/win2022/BUILD b/tensorflow/tools/toolchains/win2022/BUILD
+index fd24f4ac62e..01199d583c5 100644
+--- a/tensorflow/tools/toolchains/win2022/BUILD
++++ b/tensorflow/tools/toolchains/win2022/BUILD
+@@ -58,3 +58,24 @@ platform(
+         "cache-silo-key": "20260115",
+     },
+ )
++
++# Local platform for Windows ARM64 (WOA) native builds.
++platform(
++    name = "windows_ltsc2022_arm64",
++    constraint_values = [
++        "@platforms//cpu:arm64",
++        "@platforms//os:windows",
++        "@bazel_tools//tools/cpp:clang-cl",
++    ],
++)
++
++# Alias for rules that use the aarch64 CPU constraint spelling.
++platform(
++    name = "windows_ltsc2022_aarch64",
++    constraint_values = [
++        "@platforms//cpu:aarch64",
++        "@platforms//os:windows",
++        "@bazel_tools//tools/cpp:clang-cl",
++    ],
++)
++
+diff --git a/third_party/xla/xla/tsl/BUILD b/third_party/xla/xla/tsl/BUILD
+index 28d4448eb60..c5d27879f0d 100644
+--- a/third_party/xla/xla/tsl/BUILD
++++ b/third_party/xla/xla/tsl/BUILD
+@@ -196,8 +196,27 @@ config_setting(
+     visibility = ["//visibility:public"],
+ )
+ 
++config_setting(
++    name = "windows_arm64",
++    constraint_values = [
++        "@platforms//cpu:arm64",
++        "@platforms//os:windows",
++    ],
++    visibility = ["//visibility:public"],
++)
++
++selects.config_setting_group(
++    name = "windows_arm64_any",
++    match_any = [
++        ":windows_aarch64",
++        ":windows_arm64",
++    ],
++    visibility = ["//visibility:public"],
++)
++
+ config_setting(
+     name = "windows",
++
+     constraint_values = [
+         "@platforms//os:windows",
+     ],
+@@ -339,7 +358,7 @@ selects.config_setting_group(
+     match_any = [
+         ":linux_aarch64",
+         ":macos_arm64",
+-        ":windows_aarch64",
++        ":windows_arm64_any",
+         ":with_cross_compiler_support",
+     ],
+     visibility = ["//visibility:public"],
+@@ -350,13 +369,14 @@ selects.config_setting_group(
+     match_any = [
+         ":linux_aarch64",
+         ":macos_arm64",
+-        ":windows_aarch64",
++        ":windows_arm64_any",
+         ":linux_armhf",
+         ":with_cross_compiler_support",
+     ],
+     visibility = ["//visibility:public"],
+ )
+ 
++
+ selects.config_setting_group(
+     name = "ppc64le_or_cross",
+     match_any = [
+@@ -427,6 +447,7 @@ selects.config_setting_group(
+     match_any = [
+         "@platforms//cpu:aarch32",
+         "@platforms//cpu:aarch64",
++        "@platforms//cpu:arm64",
+         "@platforms//cpu:armv7",
+         "@platforms//cpu:armv7-m",
+         "@platforms//cpu:armv7e-m",
+@@ -435,6 +456,7 @@ selects.config_setting_group(
+     visibility = ["//visibility:public"],
+ )
+ 
++
+ # Enable NUMA on Linux platforms; hwloc does not work on Android
+ alias(
+     name = "with_numa_support",
+-- 
+2.54.0.windows.1
+
