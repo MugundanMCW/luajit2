@@ -1,221 +1,325 @@
-#!/usr/bin/env python3
-#
-# Copyright 2026 The JAX Authors.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     https://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-"""Updates JAX requirements_lock.txt files using uv (without Bazel)."""
+sorflow/compiler/mlir/tfrt/transforms/mlrt,tensorflow/core/runtime_fallback,tensorflow/core/runtime_fallback/conversion,tensorflow/core/runtime_fallback/kernel,tensorflow/core/runtime_fallback/opdefs,tensorflow/core/runtime_fallback/runtime,tensorflow/core/runtime_fallback/util,tensorflow/core/runtime_fallback/test,tensorflow/core/runtime_fallback/test/gpu,tensorflow/core/runtime_fallback/test/saved_model,tensorflow/core/runtime_fallback/test/testdata,tensorflow/core/tfrt/stubs,tensorflow/core/tfrt/tfrt_session,tensorflow/core/tfrt/mlrt,tensorflow/core/tfrt/mlrt/attribute,tensorflow/core/tfrt/mlrt/kernel,tensorflow/core/tfrt/mlrt/bytecode,tensorflow/core/tfrt/mlrt/interpreter,tensorflow/compiler/mlir/tfrt/translate/mlrt,tensorflow/compiler/mlir/tfrt/translate/mlrt/testdata,tensorflow/core/tfrt/gpu,tensorflow/core/tfrt/run_handler_thread_pool,tensorflow/core/tfrt/runtime,tensorflow/core/tfrt/saved_model,tensorflow/core/tfrt/graph_executor,tensorflow/core/tfrt/saved_model/tests,tensorflow/core/tfrt/tpu,tensorflow/core/tfrt/utils,tensorflow/core/tfrt/utils/debug,tensorflow/core/tfrt/saved_model/python,tensorflow/core/tfrt/graph_executor/python,tensorflow/core/tfrt/saved_model/utils
+DEBUG: C:/users/hcktest/_bazel_hcktest/b73u5zlo/external/rules_ml_toolchain/py/python_repo.bzl:108:14: !!!Using pywrap rules instead of directly creating .so objects!!!
+DEBUG: C:/users/hcktest/_bazel_hcktest/b73u5zlo/external/rules_ml_toolchain/py/python_repo.bzl:113:10:
+=============================
+Hermetic Python configuration:
+Version: "3.13"
+Kind: ""
+Interpreter: "default" (provided by rules_python)
+Requirements_lock label: "@python_version_repo//:requirements_lock_3_13.txt"
+=====================================
+DEBUG: Rule 'python_3_13_aarch64-pc-windows-msvc' indicated that a canonical reproducible form can be obtained by dropping arguments ["ignore_root_user_error"]
+DEBUG: Repository python_3_13_aarch64-pc-windows-msvc instantiated at:
+  C:/users/hcktest/desktop/mugunth/source/tensorflow/WORKSPACE:80:23: in <toplevel>
+  C:/users/hcktest/_bazel_hcktest/b73u5zlo/external/xla/third_party/py/python_init_toolchains.bzl:13:30: in python_init_toolchains
+  C:/users/hcktest/_bazel_hcktest/b73u5zlo/external/rules_ml_toolchain/py/python_register_toolchain.bzl:85:35: in python_register_toolchain
+  C:/users/hcktest/_bazel_hcktest/b73u5zlo/external/rules_python/python/private/python_register_toolchains.bzl:133:26: in python_register_toolchains
+Repository rule python_repository defined at:
+  C:/users/hcktest/_bazel_hcktest/b73u5zlo/external/rules_python/python/private/python_repository.bzl:229:36: in <toplevel>
+DEBUG: C:/users/hcktest/desktop/mugunth/source/tensorflow/third_party/repo.bzl:138:14:
+Warning: skipping import of repository 'net_zstd' because it already exists.
+DEBUG: C:/users/hcktest/desktop/mugunth/source/tensorflow/third_party/repo.bzl:138:14:
+Warning: skipping import of repository 'rules_proto' because it already exists.
+WARNING: The following configs were expanded more than once: [clang_local]. For repeatable flags, repeats are counted twice and may lead to unexpected behavior.
+ERROR: no such package '@@pypi//wheel': BUILD file not found in directory 'wheel' of external repository @@pypi. Add a BUILD file to a directory to mark it as a package.
+ERROR: C:/users/hcktest/desktop/mugunth/source/tensorflow/tensorflow/tools/pip_package/BUILD:242:10: no such package '@@pypi//wheel': BUILD file not found in directory 'wheel' of external repository @@pypi. Add a BUILD file to a directory to mark it as a package. and referenced by '//tensorflow/tools/pip_package:build_pip_package_py'
+ERROR: Analysis of target '//tensorflow/tools/pip_package:wheel' failed; build aborted: Analysis failed
+INFO: Elapsed time: 87.102s, Critical Path: 0.05s
+INFO: 1 process: 1 internal.
+ERROR: Build did NOT complete successfully
+FAILED:
+    Fetching repository @@XNNPACK; starting 12s
+    Fetching ...t/_bazel_hcktest/b73u5zlo/external/XNNPACK; Extracting f0d3a4805f3d8e49996194633adb6ef90f3b1d06.zip 7s
+    Fetching repository @@eigen_archive; starting
+    Fetching repository @@zlib; starting
+    Fetching repository @@com_googlesource_code_re2; starting
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> $outputBase = bazel info output_base
+INFO: Reading 'startup' options from c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --windows_enable_symlinks
+INFO: Options provided by the client:
+  Inherited 'common' options: --isatty=1 --terminal_columns=80
+INFO: Reading rc options for 'info' from c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc:
+  Inherited 'common' options: --repo_env=ML_WHEEL_TYPE=snapshot --repo_env=ML_WHEEL_BUILD_DATE= --repo_env=ML_WHEEL_VERSION_SUFFIX= --incompatible_default_to_explicit_init_py --define framework_shared_object=true --define tsl_protobuf_header_only=true --define=allow_oversize_protos=true --spawn_strategy=standalone -c opt --repo_env=USE_PYWRAP_RULES=True --copt=-DGRPC_BAZEL_BUILD --host_copt=-DGRPC_BAZEL_BUILD --action_env=GRPC_BAZEL_RUNTIME=1 --repo_env=PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb --action_env=PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb --@rules_python//python/config_settings:precompile=force_disabled --@rules_python//python/config_settings:bootstrap_impl=script --repo_env=RULES_PYTHON_ENABLE_PIPSTAR=0 --announce_rc --define=grpc_no_ares=true --noincompatible_remove_legacy_whole_archive --enable_platform_specific_config --define=with_xla_support=true --config=short_logs --config=v2 --@rules_python//python/config_settings:precompile=force_disabled --experimental_cc_shared_library --experimental_link_static_libraries_once=false --incompatible_enforce_config_setting_visibility --noenable_bzlmod --enable_workspace --incompatible_enable_cc_toolchain_resolution --repo_env USE_HERMETIC_CC_TOOLCHAIN=1 --experimental_repo_remote_exec --java_runtime_version=remotejdk_21
+INFO: Options provided by the client:
+  Inherited 'build' options: --python_path=C:/Users/HCKTest/AppData/Local/Programs/Python/Python313-arm64/python.exe
+INFO: Found applicable config definition common:short_logs in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --output_filter=DONT_MATCH_ANYTHING
+INFO: Found applicable config definition common:v2 in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=tf_api_version=2 --action_env=TF2_BEHAVIOR=1
+INFO: Found applicable config definition common:windows in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --copt=/W0 --host_copt=/W0 --copt=/Zc:__cplusplus --host_copt=/Zc:__cplusplus --copt=/D_USE_MATH_DEFINES --host_copt=/D_USE_MATH_DEFINES --features=compiler_param_file --features=archive_param_file --copt=/d2ReducedOptimizeHugeFunctions --host_copt=/d2ReducedOptimizeHugeFunctions --copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --host_copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --enable_runfiles --nobuild_python_zip --dynamic_mode=off --cxxopt=/std:c++17 --host_cxxopt=/std:c++17 --config=monolithic --copt=-DWIN32_LEAN_AND_MEAN --host_copt=-DWIN32_LEAN_AND_MEAN --copt=-DNOGDI --host_copt=-DNOGDI --copt=/Zc:preprocessor --host_copt=/Zc:preprocessor --linkopt=/DEBUG --host_linkopt=/DEBUG --linkopt=/OPT:REF --host_linkopt=/OPT:REF --linkopt=/OPT:ICF --host_linkopt=/OPT:ICF --verbose_failures --features=compiler_param_file --config=clang_local --define=xnn_enable_avx512fp16=false --config=no_tfrt
+INFO: Found applicable config definition common:monolithic in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define framework_shared_object=false --define tsl_protobuf_header_only=false --experimental_link_static_libraries_once=false
+INFO: Found applicable config definition common:clang_local in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --@rules_ml_toolchain//common:enable_hermetic_cc=False --repo_env USE_HERMETIC_CC_TOOLCHAIN=0
+INFO: Found applicable config definition common:no_tfrt in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --deleted_packages=tensorflow/compiler/mlir/tfrt,tensorflow/compiler/mlir/tfrt/benchmarks,tensorflow/compiler/mlir/tfrt/ir,tensorflow/compiler/mlir/tfrt/ir/mlrt,tensorflow/compiler/mlir/tfrt/jit/python_binding,tensorflow/compiler/mlir/tfrt/jit/transforms,tensorflow/compiler/mlir/tfrt/python_tests,tensorflow/compiler/mlir/tfrt/tests,tensorflow/compiler/mlir/tfrt/tests/ifrt,tensorflow/compiler/mlir/tfrt/tests/mlrt,tensorflow/compiler/mlir/tfrt/tests/ir,tensorflow/compiler/mlir/tfrt/tests/analysis,tensorflow/compiler/mlir/tfrt/tests/jit,tensorflow/compiler/mlir/tfrt/tests/lhlo_to_tfrt,tensorflow/compiler/mlir/tfrt/tests/lhlo_to_jitrt,tensorflow/compiler/mlir/tfrt/tests/tf_to_corert,tensorflow/compiler/mlir/tfrt/tests/tf_to_tfrt_data,tensorflow/compiler/mlir/tfrt/tests/saved_model,tensorflow/compiler/mlir/tfrt/transforms/lhlo_gpu_to_tfrt_gpu,tensorflow/compiler/mlir/tfrt/transforms/mlrt,tensorflow/core/runtime_fallback,tensorflow/core/runtime_fallback/conversion,tensorflow/core/runtime_fallback/kernel,tensorflow/core/runtime_fallback/opdefs,tensorflow/core/runtime_fallback/runtime,tensorflow/core/runtime_fallback/util,tensorflow/core/runtime_fallback/test,tensorflow/core/runtime_fallback/test/gpu,tensorflow/core/runtime_fallback/test/saved_model,tensorflow/core/runtime_fallback/test/testdata,tensorflow/core/tfrt/stubs,tensorflow/core/tfrt/tfrt_session,tensorflow/core/tfrt/mlrt,tensorflow/core/tfrt/mlrt/attribute,tensorflow/core/tfrt/mlrt/kernel,tensorflow/core/tfrt/mlrt/bytecode,tensorflow/core/tfrt/mlrt/interpreter,tensorflow/compiler/mlir/tfrt/translate/mlrt,tensorflow/compiler/mlir/tfrt/translate/mlrt/testdata,tensorflow/core/tfrt/gpu,tensorflow/core/tfrt/run_handler_thread_pool,tensorflow/core/tfrt/runtime,tensorflow/core/tfrt/saved_model,tensorflow/core/tfrt/graph_executor,tensorflow/core/tfrt/saved_model/tests,tensorflow/core/tfrt/tpu,tensorflow/core/tfrt/utils,tensorflow/core/tfrt/utils/debug,tensorflow/core/tfrt/saved_model/python,tensorflow/core/tfrt/graph_executor/python,tensorflow/core/tfrt/saved_model/utils
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> Write-Host "OUTPUT_BASE=$outputBase"
+OUTPUT_BASE=C:/users/hcktest/_bazel_hcktest/b73u5zlo
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow>
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> Write-Host "`n--- pypi/python-related external repos ---"
 
-import argparse
-import os
-import shlex
-import subprocess
-import sys
+--- pypi/python-related external repos ---
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> Get-ChildItem "$outputBase\external" -Force |
+>>   Where-Object { $_.Name -match 'pypi|python|rules_python|rules_ml|gast|wheel|setuptools' } |
+>>   Select-Object Name, FullName
 
-# Valid uv --python-platform target triples that are relevant to JAX.
-# Used for documentation / validation in --platforms help text.
-KNOWN_PLATFORMS = [
-    "x86_64-pc-windows-msvc",
-    "aarch64-pc-windows-msvc",
-    "x86_64-unknown-linux-gnu",
-    "aarch64-unknown-linux-gnu",
-    "aarch64-apple-darwin",
-    "x86_64-apple-darwin",
-]
+Name                                        FullName
+----                                        --------
+local_config_python                         C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\local_config_python
+nvidia_wheel_versions                       C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\nvidia_wheel_versions
+pypi                                        C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\pypi
+pypi__packaging                             C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\pypi__packaging
+pythons_hub                                 C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\pythons_hub
+python_3_13_aarch64-pc-windows-msvc         C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\python_3_13_aarch64-pc...
+python_3_13_host                            C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\python_3_13_host
+python_3_13_toolchains                      C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\python_3_13_toolchains
+python_version_repo                         C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\python_version_repo
+rules_ml_toolchain                          C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\rules_ml_toolchain
+rules_python                                C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\rules_python
+rules_python_internal                       C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\rules_python_internal
+tf_wheel_version_suffix                     C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\tf_wheel_version_suffix
+@local_config_python.marker                 C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@local_config_python.m...
+@nvidia_wheel_versions.marker               C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@nvidia_wheel_versions...
+@pypi.marker                                C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@pypi.marker
+@pypi__packaging.marker                     C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@pypi__packaging.marker
+@pythons_hub.marker                         C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@pythons_hub.marker
+@python_3_13_aarch64-pc-windows-msvc.marker C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@python_3_13_aarch64-p...
+@python_3_13_host.marker                    C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@python_3_13_host.marker
+@python_3_13_toolchains.marker              C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@python_3_13_toolchain...
+@python_version_repo.marker                 C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@python_version_repo.m...
+@rules_ml_toolchain.marker                  C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@rules_ml_toolchain.ma...
+@rules_python.marker                        C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@rules_python.marker
+@rules_python_internal.marker               C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@rules_python_internal...
+@tf_wheel_version_suffix.marker             C:\users\hcktest\_bazel_hcktest\b73u5zlo\external\@tf_wheel_version_suff...
 
-# Define the mapping of Python versions to their lock files and configurations
-PYTHON_VERSIONS = {
-    "3.12": {"ft": False, "dest": "build/requirements_lock_3_12.txt"},
-    "3.13": {"ft": False, "dest": "build/requirements_lock_3_13.txt"},
-    "3.14": {"ft": False, "dest": "build/requirements_lock_3_14.txt"},
-    "3.14-ft": {"ft": True, "dest": "build/requirements_lock_3_14_ft.txt"},
+
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow>
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> Write-Host "`n--- external\pypi contents ---"
+
+--- external\pypi contents ---
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> if (Test-Path "$outputBase\external\pypi") {
+>>   Get-ChildItem "$outputBase\external\pypi" -Force | Select-Object Name
+>> } else {
+>>   Write-Host "external\pypi does not exist"
+>> }
+
+Name
+----
+BUILD.bazel
+numpy.annotation.json
+REPO.bazel
+requirements.bzl
+requirements_with_markers.in.json
+requirements_with_markers.out.json
+WORKSPACE
+
+
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow>
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> Write-Host "`n--- external\pypi requirements.bzl head ---"
+
+--- external\pypi requirements.bzl head ---
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> if (Test-Path "$outputBase\external\pypi\requirements.bzl") {
+>>   Get-Content "$outputBase\external\pypi\requirements.bzl" -TotalCount 120
+>> } else {
+>>   Write-Host "no requirements.bzl"
+>> }
+"""Starlark representation of locked requirements.
+
+@generated by rules_python pip_parse repository rule.
+"""
+
+load("@rules_python//python:pip.bzl", "pip_utils")
+load("@rules_python//python/pip_install:pip_repository.bzl", "whl_config_repo", "whl_library")
+
+all_requirements = []
+
+all_whl_requirements_by_package = {}
+
+all_whl_requirements = all_whl_requirements_by_package.values()
+
+all_data_requirements = []
+
+_packages = []
+_config = {
+    "download_only": False,
+    "enable_implicit_namespace_pkgs": False,
+    "environment": {},
+    "envsubst": ["RULES_PYTHON_ENABLE_PIPSTAR"],
+    "extra_pip_args": None,
+    "isolated": True,
+    "pip_data_exclude": [],
+    "python_interpreter": "python.exe",
+    "python_interpreter_target": "@python_3_13_host//:python",
+    "quiet": True,
+    "repo": "pypi",
+    "repo_prefix": "pypi_",
+    "timeout": 600,
+}
+_annotations = {
+    "numpy": "@pypi//:numpy.annotation.json",
 }
 
-COMMON_SRCS = [
-    "build/requirements.in",
-    "build/test-requirements.txt",
-    "build/nvidia-requirements.txt",
-]
+def requirement(name):
+    return "@pypi//{}:{}".format(pip_utils.normalize_name(name), "pkg")
 
+def whl_requirement(name):
+    return "@pypi//{}:{}".format(pip_utils.normalize_name(name), "whl")
 
-def update_requirements(py_ver, nightly=False, upgrade=True, dry_run=False,
-                        platform=None):
-    if py_ver not in PYTHON_VERSIONS:
-        print(f"Error: Unsupported Python version {py_ver}")
-        sys.exit(1)
+def data_requirement(name):
+    return "@pypi//{}:{}".format(pip_utils.normalize_name(name), "data")
 
-    config = PYTHON_VERSIONS[py_ver]
-    dest = config["dest"]
-    is_ft = config["ft"]
+def dist_info_requirement(name):
+    return "@pypi//{}:{}".format(pip_utils.normalize_name(name), "dist_info")
 
-    # 1. Determine input files
-    srcs = list(COMMON_SRCS)
-    if is_ft:
-        srcs.append("build/freethreading-requirements.txt")
-    else:
-        srcs.append("build/nonfreethreading-requirements.txt")
+def _get_annotation(requirement):
+    # This expects to parse `setuptools==58.2.0     --hash=sha256:2551203ae6955b9876741a26ab3e767bb3242dafe86a32a749ea0d78b6792f11`
+    # down to `setuptools`.
+    name = requirement.split(" ")[0].split("=")[0].split("[")[0]
+    return _annotations.get(name)
 
-    # Verify inputs exist
-    for src in srcs:
-        if not os.path.exists(src):
-            print(f"Error: Input file {src} does not exist.")
-            sys.exit(1)
+def install_deps(**whl_library_kwargs):
+    """Repository rule macro. Install dependencies from `pip_parse`.
 
-    # 2. Construct uv pip compile command.
-    #
-    # --universal and --python-platform are mutually exclusive in uv:
-    #
-    #   --universal          Resolve for ALL platforms at once. uv emits
-    #                        per-platform wheel entries with sys_platform /
-    #                        platform_machine markers automatically. This is
-    #                        what the checked-in lock files must use so that
-    #                        PipStar (RULES_PYTHON_ENABLE_PIPSTAR=1) can select
-    #                        the right wheel on every platform, including
-    #                        windows_aarch64.
-    #
-    #   --python-platform T  Resolve for ONE specific target triple T only.
-    #                        Produces a smaller lock file with hashes only for
-    #                        that platform. Useful for local Windows ARM64
-    #                        iteration but must NOT be checked in, because it
-    #                        will break CI on other platforms.
-    cmd = ["uv", "pip", "compile", "--no-strip-extras"]
+    Args:
+       **whl_library_kwargs: Additional arguments which will flow to underlying
+         `whl_library` calls. See pip_repository.bzl for details.
+    """
 
-    if platform:
-        # Single-platform mode: drop --universal, use --python-platform.
-        cmd.extend(["--python-platform", platform])
-    else:
-        # Universal mode: resolve for all platforms at once.
-        cmd.append("--universal")
+    # Set up the requirement groups
+    all_requirement_groups = {}
 
-    # Add inputs and output
-    cmd.extend(srcs)
-    cmd.extend(["-o", dest])
+    requirement_group_mapping = {
+        requirement: group_name
+        for group_name, group_requirements in all_requirement_groups.items()
+        for requirement in group_requirements
+    }
 
-    # Target Python version for resolution (e.g., "3.13-ft" -> "3.13")
-    uv_py_ver = py_ver.split("-")[0]
-    cmd.extend(["--python-version", uv_py_ver])
-
-    # 3. Apply flag logic matching BUILD.bazel
-    if nightly:
-        cmd.extend([
-            "--extra-index-url",
-            "https://pypi.anaconda.org/scientific-python-nightly-wheels/simple",
-            "--pre",
-            "--upgrade",
-        ])
-    else:
-        cmd.append("--generate-hashes")
-        if upgrade:
-            cmd.append("--upgrade")
-
-    # Add a header to the output file indicating how it was generated
-    cmd.extend([
-        "--custom-compile-command",
-        "python build/update_requirements_uv.py",
-    ])
-
-    # 4. Execute
-    print(f"Running: {shlex.join(cmd)}")
-    if not dry_run:
-        try:
-            subprocess.run(cmd, check=True)
-            print(f"Successfully updated {dest}")
-        except subprocess.CalledProcessError as e:
-            print(f"Error running uv: {e}")
-            sys.exit(1)
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        description="Update JAX requirements_lock files using uv",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  # Regenerate all lock files for all platforms (use for checked-in files):
-  python build/update_requirements_uv.py
-
-  # Fast local iteration: only resolve for Windows ARM64, skip all other hashes:
-  python build/update_requirements_uv.py --platform aarch64-pc-windows-msvc
-
-  # Dry-run to see the uv command without executing:
-  python build/update_requirements_uv.py --platform aarch64-pc-windows-msvc --dry-run
-
-NOTE: --platform produces a single-platform lock file. Do NOT check it in;
-always regenerate without --platform before committing.
-""",
+    config_repo = "pypi__config"
+    whl_config_repo(
+        name = "pypi__config",
+        repo_prefix = "pypi_",
+        groups = all_requirement_groups,
+        whl_map = {
+            p: ""
+            for p in all_whl_requirements_by_package
+        },
     )
-    parser.add_argument(
-        "--nightly",
-        action="store_true",
-        help="Update using nightly/pre-release wheels.",
-    )
-    parser.add_argument(
-        "--no-upgrade",
-        action="store_false",
-        dest="upgrade",
-        help="Do not upgrade packages; only re-resolve constraints.",
-    )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Print the command that would be run without executing it.",
-    )
-    parser.add_argument(
-        "--platform",
-        metavar="PLATFORM",
-        default=None,
-        help=(
-            "Resolve for a single uv platform triple only "
-            "(e.g. aarch64-pc-windows-msvc). "
-            "Drops --universal and passes --python-platform to uv. "
-            "Produces a smaller lock file with hashes only for that platform. "
-            "Useful for local Windows ARM64 iteration. "
-            "Do NOT check in the result; use the default (no --platform) for "
-            "files that are committed to the repo. "
-            "Known values: " + ", ".join(KNOWN_PLATFORMS) + "."
-        ),
-    )
-    parser.set_defaults(upgrade=True)
+    config_load = "@{}//:config.bzl".format(config_repo)
 
-    args = parser.parse_args()
+    # Install wheels which may be participants in a group
+    whl_config = dict(_config)
+    whl_config.update(whl_library_kwargs)
 
-    # Ensure we are run from the repo root
-    if not os.path.exists("build/requirements.in"):
-        print("Error: This script must be run from the root of the JAX repository.")
-        sys.exit(1)
+    for name, requirement in _packages:
+        group_name = requirement_group_mapping.get(name.replace("pypi_", ""))
+        group_deps = all_requirement_groups.get(group_name, [])
 
-    # Check if uv is installed
-    try:
-        subprocess.run(["uv", "--version"], capture_output=True, check=True)
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        print(
-            "Error: 'uv' binary not found. Please install uv first"
-            " (https://github.com/astral-sh/uv)."
+        whl_library(
+            name = name,
+            requirement = requirement,
+            group_name = group_name,
+            group_deps = group_deps,
+            annotation = _get_annotation(requirement),
+            config_load = config_load,
+            **whl_config
         )
-        sys.exit(1)
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow>
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> Write-Host "`n--- direct package repo queries ---"
 
-    versions_to_update = list(PYTHON_VERSIONS.keys())
-
-    for ver in versions_to_update:
-        print(f"\n--- Updating Python {ver} ---")
-        update_requirements(
-            ver,
-            nightly=args.nightly,
-            upgrade=args.upgrade,
-            dry_run=args.dry_run,
-            platform=args.platform,
-        )
-
-
-if __name__ == "__main__":
-    main()
+--- direct package repo queries ---
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> bazel query --config=release_cpu_windows_arm64_minimal @pypi_wheel//:all
+WARNING: The following configs were expanded more than once: [clang_local]. For repeatable flags, repeats are counted twice and may lead to unexpected behavior.
+INFO: Reading 'startup' options from c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --windows_enable_symlinks
+INFO: Options provided by the client:
+  Inherited 'common' options: --isatty=1 --terminal_columns=120
+INFO: Reading rc options for 'query' from c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc:
+  Inherited 'common' options: --repo_env=ML_WHEEL_TYPE=snapshot --repo_env=ML_WHEEL_BUILD_DATE= --repo_env=ML_WHEEL_VERSION_SUFFIX= --incompatible_default_to_explicit_init_py --define framework_shared_object=true --define tsl_protobuf_header_only=true --define=allow_oversize_protos=true --spawn_strategy=standalone -c opt --repo_env=USE_PYWRAP_RULES=True --copt=-DGRPC_BAZEL_BUILD --host_copt=-DGRPC_BAZEL_BUILD --action_env=GRPC_BAZEL_RUNTIME=1 --repo_env=PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb --action_env=PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb --@rules_python//python/config_settings:precompile=force_disabled --@rules_python//python/config_settings:bootstrap_impl=script --repo_env=RULES_PYTHON_ENABLE_PIPSTAR=0 --announce_rc --define=grpc_no_ares=true --noincompatible_remove_legacy_whole_archive --enable_platform_specific_config --define=with_xla_support=true --config=short_logs --config=v2 --@rules_python//python/config_settings:precompile=force_disabled --experimental_cc_shared_library --experimental_link_static_libraries_once=false --incompatible_enforce_config_setting_visibility --noenable_bzlmod --enable_workspace --incompatible_enable_cc_toolchain_resolution --repo_env USE_HERMETIC_CC_TOOLCHAIN=1 --experimental_repo_remote_exec --java_runtime_version=remotejdk_21
+  Ignored as unsupported by 'query': --incompatible_default_to_explicit_init_py --define framework_shared_object=true --define tsl_protobuf_header_only=true --define=allow_oversize_protos=true --spawn_strategy=standalone -c opt --copt=-DGRPC_BAZEL_BUILD --host_copt=-DGRPC_BAZEL_BUILD --action_env=GRPC_BAZEL_RUNTIME=1 --action_env=PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb --define=grpc_no_ares=true --noincompatible_remove_legacy_whole_archive --define=with_xla_support=true --experimental_link_static_libraries_once=false --incompatible_enable_cc_toolchain_resolution --java_runtime_version=remotejdk_21
+INFO: Found applicable config definition common:short_logs in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --output_filter=DONT_MATCH_ANYTHING
+INFO: Ignored as unsupported by 'query': --output_filter=DONT_MATCH_ANYTHING
+INFO: Found applicable config definition common:v2 in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=tf_api_version=2 --action_env=TF2_BEHAVIOR=1
+INFO: Ignored as unsupported by 'query': --define=tf_api_version=2 --action_env=TF2_BEHAVIOR=1
+INFO: Found applicable config definition common:release_cpu_windows_arm64_minimal in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=release_cpu_windows_arm64 --config=nogcp --config=nonccl --define=disable_tf_lite_py=true --define=with_tpu_support=false
+INFO: Found applicable config definition common:release_cpu_windows_arm64 in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=release_base --config=win_arm64_clang --define=no_tensorflow_py_deps=true --define=with_xla_support=false
+INFO: Found applicable config definition common:release_base in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=cpu_cross
+INFO: Found applicable config definition common:cpu_cross in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=with_cross_compiler_support=true
+INFO: Found applicable config definition common:win_arm64_clang in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=win_clang_base --config=clang_local --cpu=arm64_windows --extra_toolchains=@local_config_cc//:cc-toolchain-arm64_windows-clang-cl --extra_execution_platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --host_platform=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --linkopt=/MACHINE:ARM64 --host_linkopt=/MACHINE:ARM64 --define=tensorflow_mkldnn_contraction_kernel=0 --define=xnn_enable_avxvnniint8=false --define=xnn_enable_avx512fp16=false --define=no_nccl_support=true --repo_env=TF_NEED_CUDA=0 --repo_env=TF_NEED_ROCM=0 --repo_env=HERMETIC_PYTHON_VERSION=3.13 --repo_env=TF_PYTHON_VERSION=3.13 --action_env=CLANG_COMPILER_PATH=C:/Program Files/LLVM/bin/clang-cl.exe --repo_env=CC=C:/Program Files/LLVM/bin/clang-cl.exe --repo_env=BAZEL_COMPILER=C:/Program Files/LLVM/bin/clang-cl.exe
+INFO: Found applicable config definition common:win_clang_base in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --@com_google_protobuf//build_defs:use_dlls=True --@com_google_absl//absl:use_dlls=True --linkopt=/demangle:no --host_linkopt=/demangle:no --linkopt=/errorlimit:0 --host_linkopt=/errorlimit:0 --copt=/clang:-Weverything --host_copt=/clang:-Weverything --compiler=clang-cl --linkopt=/FORCE:MULTIPLE --host_linkopt=/FORCE:MULTIPLE --action_env=PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW
+INFO: Found applicable config definition common:clang_local in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --@rules_ml_toolchain//common:enable_hermetic_cc=False --repo_env USE_HERMETIC_CC_TOOLCHAIN=0
+INFO: Found applicable config definition common:nogcp in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=no_gcp_support=true
+INFO: Found applicable config definition common:nonccl in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=no_nccl_support=true
+INFO: Ignored as unsupported by 'query': --define=with_cross_compiler_support=true --linkopt=/demangle:no --host_linkopt=/demangle:no --linkopt=/errorlimit:0 --host_linkopt=/errorlimit:0 --copt=/clang:-Weverything --host_copt=/clang:-Weverything --compiler=clang-cl --linkopt=/FORCE:MULTIPLE --host_linkopt=/FORCE:MULTIPLE --action_env=PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --cpu=arm64_windows --extra_toolchains=@local_config_cc//:cc-toolchain-arm64_windows-clang-cl --extra_execution_platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --host_platform=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --linkopt=/MACHINE:ARM64 --host_linkopt=/MACHINE:ARM64 --define=tensorflow_mkldnn_contraction_kernel=0 --define=xnn_enable_avxvnniint8=false --define=xnn_enable_avx512fp16=false --define=no_nccl_support=true --action_env=CLANG_COMPILER_PATH=C:/Program Files/LLVM/bin/clang-cl.exe --define=no_tensorflow_py_deps=true --define=with_xla_support=false --define=no_gcp_support=true --define=no_nccl_support=true --define=disable_tf_lite_py=true --define=with_tpu_support=false
+INFO: Found applicable config definition common:windows in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --copt=/W0 --host_copt=/W0 --copt=/Zc:__cplusplus --host_copt=/Zc:__cplusplus --copt=/D_USE_MATH_DEFINES --host_copt=/D_USE_MATH_DEFINES --features=compiler_param_file --features=archive_param_file --copt=/d2ReducedOptimizeHugeFunctions --host_copt=/d2ReducedOptimizeHugeFunctions --copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --host_copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --enable_runfiles --nobuild_python_zip --dynamic_mode=off --cxxopt=/std:c++17 --host_cxxopt=/std:c++17 --config=monolithic --copt=-DWIN32_LEAN_AND_MEAN --host_copt=-DWIN32_LEAN_AND_MEAN --copt=-DNOGDI --host_copt=-DNOGDI --copt=/Zc:preprocessor --host_copt=/Zc:preprocessor --linkopt=/DEBUG --host_linkopt=/DEBUG --linkopt=/OPT:REF --host_linkopt=/OPT:REF --linkopt=/OPT:ICF --host_linkopt=/OPT:ICF --verbose_failures --features=compiler_param_file --config=clang_local --define=xnn_enable_avx512fp16=false --config=no_tfrt
+INFO: Found applicable config definition common:monolithic in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define framework_shared_object=false --define tsl_protobuf_header_only=false --experimental_link_static_libraries_once=false
+INFO: Found applicable config definition common:clang_local in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --@rules_ml_toolchain//common:enable_hermetic_cc=False --repo_env USE_HERMETIC_CC_TOOLCHAIN=0
+INFO: Found applicable config definition common:no_tfrt in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --deleted_packages=tensorflow/compiler/mlir/tfrt,tensorflow/compiler/mlir/tfrt/benchmarks,tensorflow/compiler/mlir/tfrt/ir,tensorflow/compiler/mlir/tfrt/ir/mlrt,tensorflow/compiler/mlir/tfrt/jit/python_binding,tensorflow/compiler/mlir/tfrt/jit/transforms,tensorflow/compiler/mlir/tfrt/python_tests,tensorflow/compiler/mlir/tfrt/tests,tensorflow/compiler/mlir/tfrt/tests/ifrt,tensorflow/compiler/mlir/tfrt/tests/mlrt,tensorflow/compiler/mlir/tfrt/tests/ir,tensorflow/compiler/mlir/tfrt/tests/analysis,tensorflow/compiler/mlir/tfrt/tests/jit,tensorflow/compiler/mlir/tfrt/tests/lhlo_to_tfrt,tensorflow/compiler/mlir/tfrt/tests/lhlo_to_jitrt,tensorflow/compiler/mlir/tfrt/tests/tf_to_corert,tensorflow/compiler/mlir/tfrt/tests/tf_to_tfrt_data,tensorflow/compiler/mlir/tfrt/tests/saved_model,tensorflow/compiler/mlir/tfrt/transforms/lhlo_gpu_to_tfrt_gpu,tensorflow/compiler/mlir/tfrt/transforms/mlrt,tensorflow/core/runtime_fallback,tensorflow/core/runtime_fallback/conversion,tensorflow/core/runtime_fallback/kernel,tensorflow/core/runtime_fallback/opdefs,tensorflow/core/runtime_fallback/runtime,tensorflow/core/runtime_fallback/util,tensorflow/core/runtime_fallback/test,tensorflow/core/runtime_fallback/test/gpu,tensorflow/core/runtime_fallback/test/saved_model,tensorflow/core/runtime_fallback/test/testdata,tensorflow/core/tfrt/stubs,tensorflow/core/tfrt/tfrt_session,tensorflow/core/tfrt/mlrt,tensorflow/core/tfrt/mlrt/attribute,tensorflow/core/tfrt/mlrt/kernel,tensorflow/core/tfrt/mlrt/bytecode,tensorflow/core/tfrt/mlrt/interpreter,tensorflow/compiler/mlir/tfrt/translate/mlrt,tensorflow/compiler/mlir/tfrt/translate/mlrt/testdata,tensorflow/core/tfrt/gpu,tensorflow/core/tfrt/run_handler_thread_pool,tensorflow/core/tfrt/runtime,tensorflow/core/tfrt/saved_model,tensorflow/core/tfrt/graph_executor,tensorflow/core/tfrt/saved_model/tests,tensorflow/core/tfrt/tpu,tensorflow/core/tfrt/utils,tensorflow/core/tfrt/utils/debug,tensorflow/core/tfrt/saved_model/python,tensorflow/core/tfrt/graph_executor/python,tensorflow/core/tfrt/saved_model/utils
+INFO: Ignored as unsupported by 'query': --copt=/W0 --host_copt=/W0 --copt=/Zc:__cplusplus --host_copt=/Zc:__cplusplus --copt=/D_USE_MATH_DEFINES --host_copt=/D_USE_MATH_DEFINES --features=compiler_param_file --features=archive_param_file --copt=/d2ReducedOptimizeHugeFunctions --host_copt=/d2ReducedOptimizeHugeFunctions --copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --host_copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --enable_runfiles --nobuild_python_zip --dynamic_mode=off --cxxopt=/std:c++17 --host_cxxopt=/std:c++17 --define framework_shared_object=false --define tsl_protobuf_header_only=false --experimental_link_static_libraries_once=false --copt=-DWIN32_LEAN_AND_MEAN --host_copt=-DWIN32_LEAN_AND_MEAN --copt=-DNOGDI --host_copt=-DNOGDI --copt=/Zc:preprocessor --host_copt=/Zc:preprocessor --linkopt=/DEBUG --host_linkopt=/DEBUG --linkopt=/OPT:REF --host_linkopt=/OPT:REF --linkopt=/OPT:ICF --host_linkopt=/OPT:ICF --verbose_failures --features=compiler_param_file --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --define=xnn_enable_avx512fp16=false
+DEBUG: C:/users/hcktest/_bazel_hcktest/b73u5zlo/external/rules_ml_toolchain/py/python_repo.bzl:108:14: !!!Using pywrap rules instead of directly creating .so objects!!!
+DEBUG: C:/users/hcktest/_bazel_hcktest/b73u5zlo/external/rules_ml_toolchain/py/python_repo.bzl:113:10:
+=============================
+Hermetic Python configuration:
+Version: "3.13"
+Kind: ""
+Interpreter: "default" (provided by rules_python)
+Requirements_lock label: "@python_version_repo//:requirements_lock_3_13.txt"
+=====================================
+DEBUG: C:/users/hcktest/desktop/mugunth/source/tensorflow/third_party/repo.bzl:138:14:
+Warning: skipping import of repository 'net_zstd' because it already exists.
+DEBUG: C:/users/hcktest/desktop/mugunth/source/tensorflow/third_party/repo.bzl:138:14:
+Warning: skipping import of repository 'rules_proto' because it already exists.
+ERROR: no such package '@@pypi_wheel//': The repository '@@pypi_wheel' could not be resolved: Repository '@@pypi_wheel' is not defined
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> bazel query --config=release_cpu_windows_arm64_minimal @pypi_gast//:all
+WARNING: The following configs were expanded more than once: [clang_local]. For repeatable flags, repeats are counted twice and may lead to unexpected behavior.
+INFO: Reading 'startup' options from c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --windows_enable_symlinks
+INFO: Options provided by the client:
+  Inherited 'common' options: --isatty=1 --terminal_columns=120
+INFO: Reading rc options for 'query' from c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc:
+  Inherited 'common' options: --repo_env=ML_WHEEL_TYPE=snapshot --repo_env=ML_WHEEL_BUILD_DATE= --repo_env=ML_WHEEL_VERSION_SUFFIX= --incompatible_default_to_explicit_init_py --define framework_shared_object=true --define tsl_protobuf_header_only=true --define=allow_oversize_protos=true --spawn_strategy=standalone -c opt --repo_env=USE_PYWRAP_RULES=True --copt=-DGRPC_BAZEL_BUILD --host_copt=-DGRPC_BAZEL_BUILD --action_env=GRPC_BAZEL_RUNTIME=1 --repo_env=PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb --action_env=PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb --@rules_python//python/config_settings:precompile=force_disabled --@rules_python//python/config_settings:bootstrap_impl=script --repo_env=RULES_PYTHON_ENABLE_PIPSTAR=0 --announce_rc --define=grpc_no_ares=true --noincompatible_remove_legacy_whole_archive --enable_platform_specific_config --define=with_xla_support=true --config=short_logs --config=v2 --@rules_python//python/config_settings:precompile=force_disabled --experimental_cc_shared_library --experimental_link_static_libraries_once=false --incompatible_enforce_config_setting_visibility --noenable_bzlmod --enable_workspace --incompatible_enable_cc_toolchain_resolution --repo_env USE_HERMETIC_CC_TOOLCHAIN=1 --experimental_repo_remote_exec --java_runtime_version=remotejdk_21
+  Ignored as unsupported by 'query': --incompatible_default_to_explicit_init_py --define framework_shared_object=true --define tsl_protobuf_header_only=true --define=allow_oversize_protos=true --spawn_strategy=standalone -c opt --copt=-DGRPC_BAZEL_BUILD --host_copt=-DGRPC_BAZEL_BUILD --action_env=GRPC_BAZEL_RUNTIME=1 --action_env=PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb --define=grpc_no_ares=true --noincompatible_remove_legacy_whole_archive --define=with_xla_support=true --experimental_link_static_libraries_once=false --incompatible_enable_cc_toolchain_resolution --java_runtime_version=remotejdk_21
+INFO: Found applicable config definition common:short_logs in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --output_filter=DONT_MATCH_ANYTHING
+INFO: Ignored as unsupported by 'query': --output_filter=DONT_MATCH_ANYTHING
+INFO: Found applicable config definition common:v2 in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=tf_api_version=2 --action_env=TF2_BEHAVIOR=1
+INFO: Ignored as unsupported by 'query': --define=tf_api_version=2 --action_env=TF2_BEHAVIOR=1
+INFO: Found applicable config definition common:release_cpu_windows_arm64_minimal in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=release_cpu_windows_arm64 --config=nogcp --config=nonccl --define=disable_tf_lite_py=true --define=with_tpu_support=false
+INFO: Found applicable config definition common:release_cpu_windows_arm64 in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=release_base --config=win_arm64_clang --define=no_tensorflow_py_deps=true --define=with_xla_support=false
+INFO: Found applicable config definition common:release_base in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=cpu_cross
+INFO: Found applicable config definition common:cpu_cross in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=with_cross_compiler_support=true
+INFO: Found applicable config definition common:win_arm64_clang in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=win_clang_base --config=clang_local --cpu=arm64_windows --extra_toolchains=@local_config_cc//:cc-toolchain-arm64_windows-clang-cl --extra_execution_platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --host_platform=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --linkopt=/MACHINE:ARM64 --host_linkopt=/MACHINE:ARM64 --define=tensorflow_mkldnn_contraction_kernel=0 --define=xnn_enable_avxvnniint8=false --define=xnn_enable_avx512fp16=false --define=no_nccl_support=true --repo_env=TF_NEED_CUDA=0 --repo_env=TF_NEED_ROCM=0 --repo_env=HERMETIC_PYTHON_VERSION=3.13 --repo_env=TF_PYTHON_VERSION=3.13 --action_env=CLANG_COMPILER_PATH=C:/Program Files/LLVM/bin/clang-cl.exe --repo_env=CC=C:/Program Files/LLVM/bin/clang-cl.exe --repo_env=BAZEL_COMPILER=C:/Program Files/LLVM/bin/clang-cl.exe
+INFO: Found applicable config definition common:win_clang_base in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --@com_google_protobuf//build_defs:use_dlls=True --@com_google_absl//absl:use_dlls=True --linkopt=/demangle:no --host_linkopt=/demangle:no --linkopt=/errorlimit:0 --host_linkopt=/errorlimit:0 --copt=/clang:-Weverything --host_copt=/clang:-Weverything --compiler=clang-cl --linkopt=/FORCE:MULTIPLE --host_linkopt=/FORCE:MULTIPLE --action_env=PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW
+INFO: Found applicable config definition common:clang_local in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --@rules_ml_toolchain//common:enable_hermetic_cc=False --repo_env USE_HERMETIC_CC_TOOLCHAIN=0
+INFO: Found applicable config definition common:nogcp in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=no_gcp_support=true
+INFO: Found applicable config definition common:nonccl in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=no_nccl_support=true
+INFO: Ignored as unsupported by 'query': --define=with_cross_compiler_support=true --linkopt=/demangle:no --host_linkopt=/demangle:no --linkopt=/errorlimit:0 --host_linkopt=/errorlimit:0 --copt=/clang:-Weverything --host_copt=/clang:-Weverything --compiler=clang-cl --linkopt=/FORCE:MULTIPLE --host_linkopt=/FORCE:MULTIPLE --action_env=PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --cpu=arm64_windows --extra_toolchains=@local_config_cc//:cc-toolchain-arm64_windows-clang-cl --extra_execution_platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --host_platform=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --linkopt=/MACHINE:ARM64 --host_linkopt=/MACHINE:ARM64 --define=tensorflow_mkldnn_contraction_kernel=0 --define=xnn_enable_avxvnniint8=false --define=xnn_enable_avx512fp16=false --define=no_nccl_support=true --action_env=CLANG_COMPILER_PATH=C:/Program Files/LLVM/bin/clang-cl.exe --define=no_tensorflow_py_deps=true --define=with_xla_support=false --define=no_gcp_support=true --define=no_nccl_support=true --define=disable_tf_lite_py=true --define=with_tpu_support=false
+INFO: Found applicable config definition common:windows in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --copt=/W0 --host_copt=/W0 --copt=/Zc:__cplusplus --host_copt=/Zc:__cplusplus --copt=/D_USE_MATH_DEFINES --host_copt=/D_USE_MATH_DEFINES --features=compiler_param_file --features=archive_param_file --copt=/d2ReducedOptimizeHugeFunctions --host_copt=/d2ReducedOptimizeHugeFunctions --copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --host_copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --enable_runfiles --nobuild_python_zip --dynamic_mode=off --cxxopt=/std:c++17 --host_cxxopt=/std:c++17 --config=monolithic --copt=-DWIN32_LEAN_AND_MEAN --host_copt=-DWIN32_LEAN_AND_MEAN --copt=-DNOGDI --host_copt=-DNOGDI --copt=/Zc:preprocessor --host_copt=/Zc:preprocessor --linkopt=/DEBUG --host_linkopt=/DEBUG --linkopt=/OPT:REF --host_linkopt=/OPT:REF --linkopt=/OPT:ICF --host_linkopt=/OPT:ICF --verbose_failures --features=compiler_param_file --config=clang_local --define=xnn_enable_avx512fp16=false --config=no_tfrt
+INFO: Found applicable config definition common:monolithic in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define framework_shared_object=false --define tsl_protobuf_header_only=false --experimental_link_static_libraries_once=false
+INFO: Found applicable config definition common:clang_local in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --@rules_ml_toolchain//common:enable_hermetic_cc=False --repo_env USE_HERMETIC_CC_TOOLCHAIN=0
+INFO: Found applicable config definition common:no_tfrt in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --deleted_packages=tensorflow/compiler/mlir/tfrt,tensorflow/compiler/mlir/tfrt/benchmarks,tensorflow/compiler/mlir/tfrt/ir,tensorflow/compiler/mlir/tfrt/ir/mlrt,tensorflow/compiler/mlir/tfrt/jit/python_binding,tensorflow/compiler/mlir/tfrt/jit/transforms,tensorflow/compiler/mlir/tfrt/python_tests,tensorflow/compiler/mlir/tfrt/tests,tensorflow/compiler/mlir/tfrt/tests/ifrt,tensorflow/compiler/mlir/tfrt/tests/mlrt,tensorflow/compiler/mlir/tfrt/tests/ir,tensorflow/compiler/mlir/tfrt/tests/analysis,tensorflow/compiler/mlir/tfrt/tests/jit,tensorflow/compiler/mlir/tfrt/tests/lhlo_to_tfrt,tensorflow/compiler/mlir/tfrt/tests/lhlo_to_jitrt,tensorflow/compiler/mlir/tfrt/tests/tf_to_corert,tensorflow/compiler/mlir/tfrt/tests/tf_to_tfrt_data,tensorflow/compiler/mlir/tfrt/tests/saved_model,tensorflow/compiler/mlir/tfrt/transforms/lhlo_gpu_to_tfrt_gpu,tensorflow/compiler/mlir/tfrt/transforms/mlrt,tensorflow/core/runtime_fallback,tensorflow/core/runtime_fallback/conversion,tensorflow/core/runtime_fallback/kernel,tensorflow/core/runtime_fallback/opdefs,tensorflow/core/runtime_fallback/runtime,tensorflow/core/runtime_fallback/util,tensorflow/core/runtime_fallback/test,tensorflow/core/runtime_fallback/test/gpu,tensorflow/core/runtime_fallback/test/saved_model,tensorflow/core/runtime_fallback/test/testdata,tensorflow/core/tfrt/stubs,tensorflow/core/tfrt/tfrt_session,tensorflow/core/tfrt/mlrt,tensorflow/core/tfrt/mlrt/attribute,tensorflow/core/tfrt/mlrt/kernel,tensorflow/core/tfrt/mlrt/bytecode,tensorflow/core/tfrt/mlrt/interpreter,tensorflow/compiler/mlir/tfrt/translate/mlrt,tensorflow/compiler/mlir/tfrt/translate/mlrt/testdata,tensorflow/core/tfrt/gpu,tensorflow/core/tfrt/run_handler_thread_pool,tensorflow/core/tfrt/runtime,tensorflow/core/tfrt/saved_model,tensorflow/core/tfrt/graph_executor,tensorflow/core/tfrt/saved_model/tests,tensorflow/core/tfrt/tpu,tensorflow/core/tfrt/utils,tensorflow/core/tfrt/utils/debug,tensorflow/core/tfrt/saved_model/python,tensorflow/core/tfrt/graph_executor/python,tensorflow/core/tfrt/saved_model/utils
+INFO: Ignored as unsupported by 'query': --copt=/W0 --host_copt=/W0 --copt=/Zc:__cplusplus --host_copt=/Zc:__cplusplus --copt=/D_USE_MATH_DEFINES --host_copt=/D_USE_MATH_DEFINES --features=compiler_param_file --features=archive_param_file --copt=/d2ReducedOptimizeHugeFunctions --host_copt=/d2ReducedOptimizeHugeFunctions --copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --host_copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --enable_runfiles --nobuild_python_zip --dynamic_mode=off --cxxopt=/std:c++17 --host_cxxopt=/std:c++17 --define framework_shared_object=false --define tsl_protobuf_header_only=false --experimental_link_static_libraries_once=false --copt=-DWIN32_LEAN_AND_MEAN --host_copt=-DWIN32_LEAN_AND_MEAN --copt=-DNOGDI --host_copt=-DNOGDI --copt=/Zc:preprocessor --host_copt=/Zc:preprocessor --linkopt=/DEBUG --host_linkopt=/DEBUG --linkopt=/OPT:REF --host_linkopt=/OPT:REF --linkopt=/OPT:ICF --host_linkopt=/OPT:ICF --verbose_failures --features=compiler_param_file --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --define=xnn_enable_avx512fp16=false
+DEBUG: C:/users/hcktest/desktop/mugunth/source/tensorflow/third_party/repo.bzl:138:14:
+Warning: skipping import of repository 'net_zstd' because it already exists.
+DEBUG: C:/users/hcktest/desktop/mugunth/source/tensorflow/third_party/repo.bzl:138:14:
+Warning: skipping import of repository 'rules_proto' because it already exists.
+ERROR: no such package '@@pypi_gast//': The repository '@@pypi_gast' could not be resolved: Repository '@@pypi_gast' is not defined
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow> bazel query --config=release_cpu_windows_arm64_minimal @pypi_setuptools//:all
+WARNING: The following configs were expanded more than once: [clang_local]. For repeatable flags, repeats are counted twice and may lead to unexpected behavior.
+INFO: Reading 'startup' options from c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --windows_enable_symlinks
+INFO: Options provided by the client:
+  Inherited 'common' options: --isatty=1 --terminal_columns=120
+INFO: Reading rc options for 'query' from c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc:
+  Inherited 'common' options: --repo_env=ML_WHEEL_TYPE=snapshot --repo_env=ML_WHEEL_BUILD_DATE= --repo_env=ML_WHEEL_VERSION_SUFFIX= --incompatible_default_to_explicit_init_py --define framework_shared_object=true --define tsl_protobuf_header_only=true --define=allow_oversize_protos=true --spawn_strategy=standalone -c opt --repo_env=USE_PYWRAP_RULES=True --copt=-DGRPC_BAZEL_BUILD --host_copt=-DGRPC_BAZEL_BUILD --action_env=GRPC_BAZEL_RUNTIME=1 --repo_env=PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb --action_env=PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb --@rules_python//python/config_settings:precompile=force_disabled --@rules_python//python/config_settings:bootstrap_impl=script --repo_env=RULES_PYTHON_ENABLE_PIPSTAR=0 --announce_rc --define=grpc_no_ares=true --noincompatible_remove_legacy_whole_archive --enable_platform_specific_config --define=with_xla_support=true --config=short_logs --config=v2 --@rules_python//python/config_settings:precompile=force_disabled --experimental_cc_shared_library --experimental_link_static_libraries_once=false --incompatible_enforce_config_setting_visibility --noenable_bzlmod --enable_workspace --incompatible_enable_cc_toolchain_resolution --repo_env USE_HERMETIC_CC_TOOLCHAIN=1 --experimental_repo_remote_exec --java_runtime_version=remotejdk_21
+  Ignored as unsupported by 'query': --incompatible_default_to_explicit_init_py --define framework_shared_object=true --define tsl_protobuf_header_only=true --define=allow_oversize_protos=true --spawn_strategy=standalone -c opt --copt=-DGRPC_BAZEL_BUILD --host_copt=-DGRPC_BAZEL_BUILD --action_env=GRPC_BAZEL_RUNTIME=1 --action_env=PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb --define=grpc_no_ares=true --noincompatible_remove_legacy_whole_archive --define=with_xla_support=true --experimental_link_static_libraries_once=false --incompatible_enable_cc_toolchain_resolution --java_runtime_version=remotejdk_21
+INFO: Found applicable config definition common:short_logs in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --output_filter=DONT_MATCH_ANYTHING
+INFO: Ignored as unsupported by 'query': --output_filter=DONT_MATCH_ANYTHING
+INFO: Found applicable config definition common:v2 in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=tf_api_version=2 --action_env=TF2_BEHAVIOR=1
+INFO: Ignored as unsupported by 'query': --define=tf_api_version=2 --action_env=TF2_BEHAVIOR=1
+INFO: Found applicable config definition common:release_cpu_windows_arm64_minimal in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=release_cpu_windows_arm64 --config=nogcp --config=nonccl --define=disable_tf_lite_py=true --define=with_tpu_support=false
+INFO: Found applicable config definition common:release_cpu_windows_arm64 in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=release_base --config=win_arm64_clang --define=no_tensorflow_py_deps=true --define=with_xla_support=false
+INFO: Found applicable config definition common:release_base in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=cpu_cross
+INFO: Found applicable config definition common:cpu_cross in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=with_cross_compiler_support=true
+INFO: Found applicable config definition common:win_arm64_clang in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --config=win_clang_base --config=clang_local --cpu=arm64_windows --extra_toolchains=@local_config_cc//:cc-toolchain-arm64_windows-clang-cl --extra_execution_platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --host_platform=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --linkopt=/MACHINE:ARM64 --host_linkopt=/MACHINE:ARM64 --define=tensorflow_mkldnn_contraction_kernel=0 --define=xnn_enable_avxvnniint8=false --define=xnn_enable_avx512fp16=false --define=no_nccl_support=true --repo_env=TF_NEED_CUDA=0 --repo_env=TF_NEED_ROCM=0 --repo_env=HERMETIC_PYTHON_VERSION=3.13 --repo_env=TF_PYTHON_VERSION=3.13 --action_env=CLANG_COMPILER_PATH=C:/Program Files/LLVM/bin/clang-cl.exe --repo_env=CC=C:/Program Files/LLVM/bin/clang-cl.exe --repo_env=BAZEL_COMPILER=C:/Program Files/LLVM/bin/clang-cl.exe
+INFO: Found applicable config definition common:win_clang_base in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --@com_google_protobuf//build_defs:use_dlls=True --@com_google_absl//absl:use_dlls=True --linkopt=/demangle:no --host_linkopt=/demangle:no --linkopt=/errorlimit:0 --host_linkopt=/errorlimit:0 --copt=/clang:-Weverything --host_copt=/clang:-Weverything --compiler=clang-cl --linkopt=/FORCE:MULTIPLE --host_linkopt=/FORCE:MULTIPLE --action_env=PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW
+INFO: Found applicable config definition common:clang_local in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --@rules_ml_toolchain//common:enable_hermetic_cc=False --repo_env USE_HERMETIC_CC_TOOLCHAIN=0
+INFO: Found applicable config definition common:nogcp in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=no_gcp_support=true
+INFO: Found applicable config definition common:nonccl in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define=no_nccl_support=true
+INFO: Ignored as unsupported by 'query': --define=with_cross_compiler_support=true --linkopt=/demangle:no --host_linkopt=/demangle:no --linkopt=/errorlimit:0 --host_linkopt=/errorlimit:0 --copt=/clang:-Weverything --host_copt=/clang:-Weverything --compiler=clang-cl --linkopt=/FORCE:MULTIPLE --host_linkopt=/FORCE:MULTIPLE --action_env=PATHEXT=.COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.PY;.PYW --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --cpu=arm64_windows --extra_toolchains=@local_config_cc//:cc-toolchain-arm64_windows-clang-cl --extra_execution_platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --host_platform=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --platforms=//tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64 --linkopt=/MACHINE:ARM64 --host_linkopt=/MACHINE:ARM64 --define=tensorflow_mkldnn_contraction_kernel=0 --define=xnn_enable_avxvnniint8=false --define=xnn_enable_avx512fp16=false --define=no_nccl_support=true --action_env=CLANG_COMPILER_PATH=C:/Program Files/LLVM/bin/clang-cl.exe --define=no_tensorflow_py_deps=true --define=with_xla_support=false --define=no_gcp_support=true --define=no_nccl_support=true --define=disable_tf_lite_py=true --define=with_tpu_support=false
+INFO: Found applicable config definition common:windows in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --copt=/W0 --host_copt=/W0 --copt=/Zc:__cplusplus --host_copt=/Zc:__cplusplus --copt=/D_USE_MATH_DEFINES --host_copt=/D_USE_MATH_DEFINES --features=compiler_param_file --features=archive_param_file --copt=/d2ReducedOptimizeHugeFunctions --host_copt=/d2ReducedOptimizeHugeFunctions --copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --host_copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --enable_runfiles --nobuild_python_zip --dynamic_mode=off --cxxopt=/std:c++17 --host_cxxopt=/std:c++17 --config=monolithic --copt=-DWIN32_LEAN_AND_MEAN --host_copt=-DWIN32_LEAN_AND_MEAN --copt=-DNOGDI --host_copt=-DNOGDI --copt=/Zc:preprocessor --host_copt=/Zc:preprocessor --linkopt=/DEBUG --host_linkopt=/DEBUG --linkopt=/OPT:REF --host_linkopt=/OPT:REF --linkopt=/OPT:ICF --host_linkopt=/OPT:ICF --verbose_failures --features=compiler_param_file --config=clang_local --define=xnn_enable_avx512fp16=false --config=no_tfrt
+INFO: Found applicable config definition common:monolithic in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define framework_shared_object=false --define tsl_protobuf_header_only=false --experimental_link_static_libraries_once=false
+INFO: Found applicable config definition common:clang_local in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --@rules_ml_toolchain//common:enable_hermetic_cc=False --repo_env USE_HERMETIC_CC_TOOLCHAIN=0
+INFO: Found applicable config definition common:no_tfrt in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --deleted_packages=tensorflow/compiler/mlir/tfrt,tensorflow/compiler/mlir/tfrt/benchmarks,tensorflow/compiler/mlir/tfrt/ir,tensorflow/compiler/mlir/tfrt/ir/mlrt,tensorflow/compiler/mlir/tfrt/jit/python_binding,tensorflow/compiler/mlir/tfrt/jit/transforms,tensorflow/compiler/mlir/tfrt/python_tests,tensorflow/compiler/mlir/tfrt/tests,tensorflow/compiler/mlir/tfrt/tests/ifrt,tensorflow/compiler/mlir/tfrt/tests/mlrt,tensorflow/compiler/mlir/tfrt/tests/ir,tensorflow/compiler/mlir/tfrt/tests/analysis,tensorflow/compiler/mlir/tfrt/tests/jit,tensorflow/compiler/mlir/tfrt/tests/lhlo_to_tfrt,tensorflow/compiler/mlir/tfrt/tests/lhlo_to_jitrt,tensorflow/compiler/mlir/tfrt/tests/tf_to_corert,tensorflow/compiler/mlir/tfrt/tests/tf_to_tfrt_data,tensorflow/compiler/mlir/tfrt/tests/saved_model,tensorflow/compiler/mlir/tfrt/transforms/lhlo_gpu_to_tfrt_gpu,tensorflow/compiler/mlir/tfrt/transforms/mlrt,tensorflow/core/runtime_fallback,tensorflow/core/runtime_fallback/conversion,tensorflow/core/runtime_fallback/kernel,tensorflow/core/runtime_fallback/opdefs,tensorflow/core/runtime_fallback/runtime,tensorflow/core/runtime_fallback/util,tensorflow/core/runtime_fallback/test,tensorflow/core/runtime_fallback/test/gpu,tensorflow/core/runtime_fallback/test/saved_model,tensorflow/core/runtime_fallback/test/testdata,tensorflow/core/tfrt/stubs,tensorflow/core/tfrt/tfrt_session,tensorflow/core/tfrt/mlrt,tensorflow/core/tfrt/mlrt/attribute,tensorflow/core/tfrt/mlrt/kernel,tensorflow/core/tfrt/mlrt/bytecode,tensorflow/core/tfrt/mlrt/interpreter,tensorflow/compiler/mlir/tfrt/translate/mlrt,tensorflow/compiler/mlir/tfrt/translate/mlrt/testdata,tensorflow/core/tfrt/gpu,tensorflow/core/tfrt/run_handler_thread_pool,tensorflow/core/tfrt/runtime,tensorflow/core/tfrt/saved_model,tensorflow/core/tfrt/graph_executor,tensorflow/core/tfrt/saved_model/tests,tensorflow/core/tfrt/tpu,tensorflow/core/tfrt/utils,tensorflow/core/tfrt/utils/debug,tensorflow/core/tfrt/saved_model/python,tensorflow/core/tfrt/graph_executor/python,tensorflow/core/tfrt/saved_model/utils
+INFO: Ignored as unsupported by 'query': --copt=/W0 --host_copt=/W0 --copt=/Zc:__cplusplus --host_copt=/Zc:__cplusplus --copt=/D_USE_MATH_DEFINES --host_copt=/D_USE_MATH_DEFINES --features=compiler_param_file --features=archive_param_file --copt=/d2ReducedOptimizeHugeFunctions --host_copt=/d2ReducedOptimizeHugeFunctions --copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --host_copt=-D_ENABLE_EXTENDED_ALIGNED_STORAGE --enable_runfiles --nobuild_python_zip --dynamic_mode=off --cxxopt=/std:c++17 --host_cxxopt=/std:c++17 --define framework_shared_object=false --define tsl_protobuf_header_only=false --experimental_link_static_libraries_once=false --copt=-DWIN32_LEAN_AND_MEAN --host_copt=-DWIN32_LEAN_AND_MEAN --copt=-DNOGDI --host_copt=-DNOGDI --copt=/Zc:preprocessor --host_copt=/Zc:preprocessor --linkopt=/DEBUG --host_linkopt=/DEBUG --linkopt=/OPT:REF --host_linkopt=/OPT:REF --linkopt=/OPT:ICF --host_linkopt=/OPT:ICF --verbose_failures --features=compiler_param_file --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --define=xnn_enable_avx512fp16=false
+ERROR: no such package '@@pypi_setuptools//': The repository '@@pypi_setuptools' could not be resolved: Repository '@@pypi_setuptools' is not defined
+PS C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow>
