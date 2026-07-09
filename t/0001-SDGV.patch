@@ -1,0 +1,40 @@
+From 2d6cf00b5e15da1c25543cab930afb43177312ba Mon Sep 17 00:00:00 2001
+From: Muguqti <mselvana@qti.qualcomm.com>
+Date: Thu, 9 Jul 2026 12:13:55 +0530
+Subject: [PATCH] SDGV
+
+---
+ .bazelrc | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+diff --git a/.bazelrc b/.bazelrc
+index 29b77282296..3fda431eb8e 100644
+--- a/.bazelrc
++++ b/.bazelrc
+@@ -575,10 +575,13 @@ common:win_arm64_clang --define=xnn_enable_avx512fp16=false
+ common:win_arm64_clang --define=no_nccl_support=true
+ common:win_arm64_clang --repo_env=TF_NEED_CUDA=0
+ common:win_arm64_clang --repo_env=TF_NEED_ROCM=0
++common:win_arm64_clang --repo_env=HERMETIC_PYTHON_VERSION=3.13
++common:win_arm64_clang --repo_env=TF_PYTHON_VERSION=3.13
+ common:win_arm64_clang --action_env=CLANG_COMPILER_PATH="C:/Program Files/LLVM/bin/clang-cl.exe"
+ common:win_arm64_clang --repo_env=CC="C:/Program Files/LLVM/bin/clang-cl.exe"
+ common:win_arm64_clang --repo_env=BAZEL_COMPILER="C:/Program Files/LLVM/bin/clang-cl.exe"
+ 
++
+ common:windows_x86_cpu_2022 --config=win_clang_base
+ 
+ common:windows_x86_cpu_2022 --crosstool_top="//tensorflow/tools/toolchains/win2022/20241118:toolchain"
+@@ -897,7 +900,8 @@ common:release_cpu_windows_arm64_minimal --config=nogcp
+ common:release_cpu_windows_arm64_minimal --config=nonccl
+ common:release_cpu_windows_arm64_minimal --define=disable_tf_lite_py=true
+ common:release_cpu_windows_arm64_minimal --define=with_tpu_support=false
+-common:release_cpu_windows_arm64_minimal --deleted_packages=tensorflow/core/tpu,tensorflow/compiler/tf2tensorrt,tensorflow/lite,tensorflow/go,tensorflow/java
++common:release_cpu_windows_arm64_minimal --deleted_packages=tensorflow/core/tpu,tensorflow/compiler/tf2tensorrt,tensorflow/go,tensorflow/java
++
+ 
+ # Exclude TFRT integration for anything but Linux.
+ 
+-- 
+2.54.0.windows.1
+
