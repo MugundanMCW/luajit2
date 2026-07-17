@@ -1,909 +1,891 @@
-# AArch64 — Addressing Modes & Calling Convention (AAPCS64)
-> Source files: `AArch64ISelDAGToDAG.cpp`, `AArch64InstrFormats.td`,
-> `AArch64CallingConvention.td`
+# AArch64 Instruction Encoding — Fixed 32-bit Width
+> Source file: `AArch64InstrFormats.td`
 
 ---
 
 ## Table of Contents
 
-- [Part 1 — Addressing Modes](#part-1--addressing-modes)
-  - [What is an Addressing Mode?](#what-is-an-addressing-mode)
-  - [Mode 1 — Base + Scaled Immediate](#mode-1--base--scaled-immediate)
-  - [Mode 2 — Base + Unscaled Immediate](#mode-2--base--unscaled-immediate)
-  - [Mode 3 — Base + Register Offset (WRO / XRO)](#mode-3--base--register-offset-wro--xro)
-  - [Mode 4 — Pre-Index](#mode-4--pre-index)
-  - [Mode 5 — Post-Index](#mode-5--post-index)
-  - [All Five Modes Side by Side](#all-five-modes-side-by-side)
-  - [How the Compiler Picks a Mode](#how-the-compiler-picks-a-mode)
-  - [How This Maps to Code in AArch64ISelDAGToDAG.cpp](#how-this-maps-to-code-in-aarch64iseldagtodag-cpp)
-- [Part 2 — AAPCS64 Calling Convention](#part-2--aapcs64-calling-convention)
-  - [What is a Calling Convention?](#what-is-a-calling-convention)
-  - [Rule 1 — Integer Arguments: X0–X7](#rule-1--integer-arguments-x0x7)
-  - [Rule 2 — Small Integers Are Promoted](#rule-2--small-integers-are-promoted)
-  - [Rule 3 — Float Arguments: S0–S7 / D0–D7](#rule-3--float-arguments-s0s7--d0d7)
-  - [Rule 4 — More Than 8 Arguments Go on the Stack](#rule-4--more-than-8-arguments-go-on-the-stack)
-  - [Rule 5 — Return Values](#rule-5--return-values)
-  - [Rule 6 — Callee-Saved Registers](#rule-6--callee-saved-registers)
-  - [Rule 7 — Large Struct Return via X8 (SRet)](#rule-7--large-struct-return-via-x8-sret)
-  - [Rule 8 — SVE / NEON Vector Arguments](#rule-8--sve--neon-vector-arguments)
-  - [The Full Call Sequence — One Worked Example](#the-full-call-sequence--one-worked-example)
-  - [How TableGen Encodes These Rules](#how-tablegen-encodes-these-rules)
-  - [Variants of the Calling Convention](#variants-of-the-calling-convention)
-  - [Connection to Callee-Saved and Tail Calls](#connection-to-callee-saved-and-tail-calls)
+- [What Does "Fixed 32-bit Width" Mean?](#what-does-fixed-32-bit-width-mean)
+- [Width vs Address — What is the Difference?](#width-vs-address--what-is-the-difference)
+- [What Lives Inside the 32 Bits?](#what-lives-inside-the-32-bits)
+- [The Root Class — AArch64Inst](#the-root-class--aarch64inst)
+- [Pseudo vs Real Instructions](#pseudo-vs-real-instructions)
+- [How a Bit Field Becomes an Instruction](#how-a-bit-field-becomes-an-instruction)
+- [Encoding Groups — Reading the Bit Layout](#encoding-groups--reading-the-bit-layout)
+  - [Group 1 — Data Processing (Register)](#group-1--data-processing-register)
+  - [Group 2 — Data Processing (Immediate)](#group-2--data-processing-immediate)
+  - [Group 3 — Branches](#group-3--branches)
+  - [Group 4 — Load / Store](#group-4--load--store)
+- [Operand Encoding — Immediates](#operand-encoding--immediates)
+  - [Unsigned Immediates](#unsigned-immediates)
+  - [Signed Immediates](#signed-immediates)
+  - [Scaled Immediates](#scaled-immediates)
+  - [Logical Immediates — The Special Case](#logical-immediates--the-special-case)
+  - [Floating-Point Immediates](#floating-point-immediates)
+- [Operand Encoding — Shifts and Extends](#operand-encoding--shifts-and-extends)
+  - [Arithmetic Shifted Register](#arithmetic-shifted-register)
+  - [Logical Shifted Register](#logical-shifted-register)
+  - [Extended Register](#extended-register)
+- [Operand Encoding — Branches and PC-Relative Labels](#operand-encoding--branches-and-pc-relative-labels)
+- [TSFlags — Per-Instruction Metadata](#tsflags--per-instruction-metadata)
+- [The Unpredictable Field](#the-unpredictable-field)
+- [ComplexPattern — Bridging TableGen and C++](#complexpattern--bridging-tablegen-and-c)
+- [How Everything Connects — End to End](#how-everything-connects--end-to-end)
 
 ---
 
-## Part 1 — Addressing Modes
+## What Does "Fixed 32-bit Width" Mean?
 
-### What is an Addressing Mode?
-
-When a CPU executes a load or store instruction, it needs to know **which memory
-location to access**. The CPU cannot just say "go to memory" — it needs a
-concrete **address**. An **addressing mode** is the method used to compute that
-address from the operands of the instruction.
-
-Think of it like giving someone directions to a house:
+Every AArch64 instruction is **exactly 32 bits wide** — no exceptions. This is
+fundamentally different from x86, where instructions can be 1 to 15 bytes long.
 
 ```
-"Go to house number 42"                → fixed address (immediate)
-"Go 3 doors from where you are"        → base register + constant offset
-"Go to the door number stored in your  → base register + register offset
- notebook"
-"Walk forward, then read the door"     → post-index
-"Read the door, then walk forward"     → pre-index
+AArch64 instruction stream:
+  [31:0]  [31:0]  [31:0]  [31:0]
+  ──────  ──────  ──────  ──────
+  4 bytes 4 bytes 4 bytes 4 bytes
+
+x86 instruction stream:
+  [8-bit] [8-bit][16-bit] [8-bit][8-bit][32-bit]
+  ──────  ──────────────  ──────────────────────
+  1 byte  2 bytes         6 bytes
 ```
 
-AArch64 has five addressing modes. Each one is a different way to express
-`address = f(registers, constants)`.
+**Why does this matter for a compiler?**
 
----
+1. **Instruction fetch is simple** — the CPU always fetches exactly 4 bytes.
+   No variable-length decoding needed.
+2. **Every operand must fit in the 32 bits** — there is no room for a full
+   64-bit immediate. Large constants must be loaded separately.
+3. **Immediates are encoded in specific bit fields** — the compiler must know
+   exactly which bits hold which operand, and whether the value fits.
+4. **The disassembler is trivial** — read 4 bytes, decode fixed fields.
 
-### Mode 1 — Base + Scaled Immediate
-
-```
-Address = Base_Register + (Immediate × Data_Size_In_Bytes)
-```
-
-This is the most common mode. You have a **base register** holding a starting
-address, and you add a **constant offset** to it. The offset is encoded in the
-instruction as a 12-bit unsigned integer.
-
-```asm
-LDR  X0, [X1, #8]      ; address = X1 + 8
-STR  X2, [X3, #16]     ; address = X3 + 16
-LDR  W0, [X1, #100]    ; address = X1 + 100
-LDR  Q0, [X1, #32]     ; address = X1 + 32  (128-bit NEON load)
-```
-
-**What does "scaled" mean?**
-
-The 12-bit field in the instruction encoding does not store the raw byte offset.
-It stores the offset **divided by the data size**. The CPU multiplies it back
-when computing the address.
-
-```
-For a 64-bit (8-byte) load:
-  Encoded value = byte_offset / 8
-  Byte range    = 0 to 4095 × 8 = 0 to 32760
-
-For a 32-bit (4-byte) load:
-  Encoded value = byte_offset / 4
-  Byte range    = 0 to 4095 × 4 = 0 to 16380
-
-For an 8-bit (1-byte) load:
-  Encoded value = byte_offset / 1
-  Byte range    = 0 to 4095
-```
-
-This is why the offset must be a **multiple of the data size** — if it is not,
-the division is not exact and the mode cannot be used.
-
-**In the code — `isValidAsScaledImmediate`:**
-
-```cpp
-// AArch64ISelDAGToDAG.cpp
-static bool isValidAsScaledImmediate(int64_t Offset, unsigned Range,
-                                     unsigned Size) {
-  if ((Offset & (Size - 1)) == 0 &&   // must be aligned to data size
-       Offset >= 0 &&                  // must be non-negative
-       (uint64_t)Offset < Range * Size) // must fit in 12-bit field
-    return true;
-  return false;
-}
-```
-
-`(Offset & (Size - 1)) == 0` checks alignment — for a 64-bit load (`Size=8`),
-this checks that the offset is a multiple of 8.
-
-**In TableGen — `am_indexed8`, `am_indexed32`, etc.:**
+In LLVM, this 32-bit constraint is expressed in `AArch64InstrFormats.td` as:
 
 ```tablegen
 // AArch64InstrFormats.td
-def am_indexed8   : ComplexPattern<iPTR, 2, "SelectAddrModeIndexed8",  []>;
-def am_indexed16  : ComplexPattern<iPTR, 2, "SelectAddrModeIndexed16", []>;
-def am_indexed32  : ComplexPattern<iPTR, 2, "SelectAddrModeIndexed32", []>;
-def am_indexed64  : ComplexPattern<iPTR, 2, "SelectAddrModeIndexed64", []>;
-def am_indexed128 : ComplexPattern<iPTR, 2, "SelectAddrModeIndexed128",[]>;
+class AArch64Inst<Format f, string cstr> : Instruction {
+  field bits<32> Inst;   // ← the 32-bit encoding
+  // ...
+}
 ```
 
-Each `ComplexPattern` is a TableGen hook that calls the corresponding C++
-function in `AArch64ISelDAGToDAG.cpp`. The number `2` means it produces two
-output operands: `Base` and `OffImm`.
+Every instruction in the AArch64 backend ultimately inherits from this class
+and fills in specific bits of `Inst`.
 
 ---
 
-### Mode 2 — Base + Unscaled Immediate
+## Width vs Address — What is the Difference?
+
+These are two completely separate concepts that are easy to confuse.
 
 ```
-Address = Base_Register + Immediate (raw bytes, no scaling)
+Memory address    Content
+──────────────    ──────────────────────────────────────
+0x1000            [byte][byte][byte][byte]   ← instruction 1
+0x1004            [byte][byte][byte][byte]   ← instruction 2
+0x1008            [byte][byte][byte][byte]   ← instruction 3
+0x100C            [byte][byte][byte][byte]   ← instruction 4
 ```
 
-Similar to Mode 1, but:
-- The offset is **not scaled** — it is the exact byte count
-- The offset can be **negative** (range: −256 to +255)
-- Uses different instruction mnemonics: `LDUR` / `STUR` (the `U` = Unscaled)
+- **Address** (`0x1000`, `0x1004`, ...) — where in memory the instruction
+  lives. This is just a location.
+- **Width** (4 bytes = 32 bits) — how many bytes the instruction itself
+  occupies. This is the size of the binary data.
 
-```asm
-LDUR  X0, [X1, #-8]    ; address = X1 - 8   (negative offset)
-STUR  X2, [X3, #-16]   ; address = X3 - 16
-LDUR  W0, [X1, #3]     ; address = X1 + 3   (not a multiple of 4 — can't use LDR)
+Because every AArch64 instruction is exactly 4 bytes wide, addresses always
+advance by exactly 4. That is why you see `0x1000`, `0x1004`, `0x1008` — never
+`0x1001` or `0x1003`.
+
+Compare with x86 where instructions have variable width:
+
+```
+Memory address    Content                      Width
+──────────────    ───────────────────────────  ─────
+0x1000            [byte]                       1 byte
+0x1001            [byte][byte]                 2 bytes
+0x1003            [byte][byte][byte][byte]      4 bytes
+0x1007            [byte][byte][byte]            3 bytes
 ```
 
-**When is this used instead of Mode 1?**
-
-Two situations:
-1. The offset is **negative** — Mode 1 only handles non-negative offsets
-2. The offset is **not aligned** to the data size — e.g., loading a 32-bit value
-   at byte offset 3 (which is not a multiple of 4)
-
-**In the code — `SelectAddrModeUnscaled`:**
-
-```cpp
-// AArch64ISelDAGToDAG.cpp
-bool AArch64DAGToDAGISel::SelectAddrModeUnscaled(SDValue N, unsigned Size,
-                                                  SDValue &Base,
-                                                  SDValue &OffImm) {
-  // Only matches ADD nodes (base + constant)
-  if (N.getOpcode() != ISD::ADD) return false;
-
-  if (ConstantSDNode *RHS = dyn_cast<ConstantSDNode>(N.getOperand(1))) {
-    int64_t RHSC = RHS->getSExtValue();
-    if (RHSC >= -256 && RHSC < 256) {   // 9-bit signed range
-      Base   = N.getOperand(0);
-      OffImm = CurDAG->getTargetConstant(RHSC, dl, MVT::i64);
-      return true;
-    }
-  }
-  return false;
-}
-```
-
-The range `[-256, 255]` is a 9-bit signed integer — exactly what the `LDUR`
-instruction encoding provides.
-
-**Key insight — Mode 1 is tried first:**
-
-```cpp
-// AArch64ISelDAGToDAG.cpp — inside SelectAddrModeIndexed
-// Before falling back to our general case, check if the unscaled
-// instructions can handle this. If so, that's preferable.
-if (SelectAddrModeUnscaled(N, Size, Base, OffImm))
-    return false;   // let the unscaled path handle it
-```
-
-The compiler tries Mode 1 (scaled) first. If the offset doesn't fit Mode 1 but
-fits Mode 2 (unscaled), it uses Mode 2. This avoids materializing the address
-in a separate register.
+On x86 the CPU cannot know where the next instruction starts until it has
+fully decoded the current one. On AArch64 it always knows: next instruction
+is at `current_address + 4`.
 
 ---
 
-### Mode 3 — Base + Register Offset (WRO / XRO)
+## What Lives Inside the 32 Bits?
+
+The entire instruction — **opcode + all operands** — is packed into those
+4 bytes. Every piece of information the CPU needs to execute the instruction
+must fit inside.
 
 ```
-Address = Base_Register + Offset_Register (optionally shifted or extended)
+ADD  X0, X1, X2
+
+ 31      29 28    21 20    16 15    10 9      5 4      0
+┌──────────┬────────┬────────┬────────┬────────┬────────┐
+│  sf + op │ fixed  │   Rm   │  shift │   Rn   │   Rd   │
+│ (opcode) │ (group)│  (X2)  │  (#0)  │  (X1)  │  (X0)  │
+└──────────┴────────┴────────┴────────┴────────┴────────┘
+  3 bits     8 bits   5 bits   6 bits   5 bits   5 bits
 ```
 
-Instead of a constant, the offset is **another register**. This is used when
-the offset is computed at runtime — for example, indexing into an array with a
-variable index.
+Breaking it down:
+
+```
+Bit  [31]     = 1          → 64-bit operation (X registers, not W)
+Bit  [29]     = 0          → don't set flags (ADD not ADDS)
+Bits [28:21]  = 11010110   → "data processing register" group identifier
+Bits [20:16]  = 00010      → Rm = X2 (register number 2)
+Bits [15:10]  = 000000     → shift amount = 0, shift type = LSL
+Bits [9:5]    = 00001      → Rn = X1 (register number 1)
+Bits [4:0]    = 00000      → Rd = X0 (register number 0)
+```
+
+The **opcode** is not a single field — it is spread across several fixed bit
+ranges that together identify the instruction. The **operands** (register
+numbers, immediates, shift amounts) fill the remaining bits.
+
+**The constraint this creates — large constants cannot fit:**
+
+Because everything must share 32 bits, there is no room for a full 64-bit
+constant inside a single instruction.
 
 ```asm
-LDR  X0, [X1, X2]              ; address = X1 + X2
-LDR  X0, [X1, X2, LSL #3]      ; address = X1 + (X2 << 3) = X1 + X2*8
-LDR  X0, [X1, W2, UXTW]        ; address = X1 + zero_extend(W2)
-LDR  X0, [X1, W2, SXTW #2]     ; address = X1 + sign_extend(W2) << 2
+; IMPOSSIBLE in one instruction:
+MOV  X0, #0x1234567890ABCDEF   ; 64-bit constant — does not fit in 32 bits
+
+; AArch64 splits it across four instructions:
+MOVZ  X0, #0xCDEF              ; load bits [15:0]
+MOVK  X0, #0x90AB, LSL #16     ; insert bits [31:16]
+MOVK  X0, #0x5678, LSL #32     ; insert bits [47:32]
+MOVK  X0, #0x1234, LSL #48     ; insert bits [63:48]
 ```
 
-There are two variants based on the width of the offset register:
+Each `MOVZ`/`MOVK` carries only 16 bits of the constant — that is all that
+fits alongside the opcode and register fields in 32 bits. This is a direct
+consequence of the fixed-width encoding.
 
-**WRO — W Register Offset:**
-The offset is a 32-bit `W` register. It must be extended to 64-bit before
-adding. The extension can be:
-- `UXTW` — zero-extend (treat as unsigned)
-- `SXTW` — sign-extend (treat as signed, so negative indices work)
+**Summary:**
 
-**XRO — X Register Offset:**
-The offset is a 64-bit `X` register. It can optionally be shifted left by
-`0`, `1`, `2`, or `3` bits (i.e., multiplied by 1, 2, 4, or 8).
+```
+32 bits = opcode bits + register numbers + immediate value
+          (what to do)   (which registers)  (constant, if any)
 
-**A concrete C example:**
-
-```c
-int arr[100];
-int load_element(int *arr, int index) {
-    return arr[index];
-}
+All three must share the same 32 bits.
+The instruction format defines exactly which bits belong to which part.
 ```
 
-`index` is a variable — its value is not known at compile time. The compiler
-cannot use a constant offset. It uses Mode 3:
+---
 
-```asm
-; arr is in X0, index is in W1
-LDR  W0, [X0, W1, UXTW #2]
-;         ^^  ^^  ^^^^  ^^
-;         arr idx  zero  scale by 4 (int = 4 bytes)
-;                  extend
-```
-
-`UXTW #2` means: zero-extend `W1` to 64-bit, then shift left by 2 (multiply
-by 4, since `int` is 4 bytes). This computes `arr + index * 4` in one
-instruction.
-
-**In the code — `SelectAddrModeWRO` and `SelectAddrModeXRO`:**
-
-```cpp
-// AArch64ISelDAGToDAG.cpp
-bool AArch64DAGToDAGISel::SelectAddrModeWRO(SDValue N, unsigned Size,
-                                             SDValue &Base, SDValue &Offset,
-                                             SDValue &SignExtend,
-                                             SDValue &DoShift) {
-  // Matches: base + (w_reg extended to 64-bit, optionally shifted)
-  // Produces 4 operands: Base, Offset, SignExtend flag, DoShift flag
-}
-
-bool AArch64DAGToDAGISel::SelectAddrModeXRO(SDValue N, unsigned Size,
-                                             SDValue &Base, SDValue &Offset,
-                                             SDValue &SignExtend,
-                                             SDValue &DoShift) {
-  // Matches: base + (x_reg, optionally shifted by log2(Size))
-  // Produces 4 operands: Base, Offset, SignExtend flag, DoShift flag
-}
-```
-
-Notice these produce **4 operands** (not 2 like the immediate modes). The extra
-two are flags: `SignExtend` (SXTW vs UXTW) and `DoShift` (whether to apply the
-scale shift).
-
-**In TableGen:**
+## The Root Class — AArch64Inst
 
 ```tablegen
 // AArch64InstrFormats.td
-def ro_Windexed32 : ComplexPattern<iPTR, 4, "SelectAddrModeWRO<32>", []>;
-def ro_Xindexed32 : ComplexPattern<iPTR, 4, "SelectAddrModeXRO<32>", []>;
-//                                      ^
-//                                      4 output operands
-```
+class AArch64Inst<Format f, string cstr> : Instruction {
+  field bits<32> Inst;          // The 32-bit instruction encoding
+  field bits<32> Unpredictable = 0; // Bits that make the instruction UNPREDICTABLE
+  field bits<32> SoftFail = Unpredictable; // Alias for the disassembler
 
----
+  let Namespace = "AArch64";
+  Format F   = f;
+  bits<2> Form = F.Value;
 
-### Mode 4 — Pre-Index
+  // Per-instruction metadata flags (packed into TSFlags)
+  bit isWhile = 0;
+  bit isPTestLike = 0;
+  FalseLanesEnum FalseLanes       = FalseLanesNone;
+  DestructiveInstTypeEnum DestructiveInstType = NotDestructive;
+  SMEMatrixTypeEnum SMEMatrixType = SMEMatrixNone;
+  ElementSizeEnum ElementSize     = ElementSizeNone;
 
-```
-Address  = Base_Register + Offset
-Base_Register is UPDATED to the new address BEFORE the memory access
-```
+  // TSFlags bit layout:
+  let TSFlags{13-11} = SMEMatrixType.Value;
+  let TSFlags{10}    = isPTestLike;
+  let TSFlags{9}     = isWhile;
+  let TSFlags{8-7}   = FalseLanes.Value;
+  let TSFlags{6-3}   = DestructiveInstType.Value;
+  let TSFlags{2-0}   = ElementSize.Value;
 
-```asm
-LDR  X0, [X1, #8]!     ; 1. compute address = X1 + 8
-                        ; 2. X1 = X1 + 8   ← update BEFORE load
-                        ; 3. load from X1 (which is now X1_old + 8)
-```
-
-The `!` suffix means **writeback** — the base register is updated. The update
-happens **before** the memory access.
-
-**When is this useful?**
-
-Walking through a data structure where you always want the base register to
-point to the current element:
-
-```c
-// Advancing a pointer and reading the new location
-*++ptr = value;   // increment first, then write — this is pre-index
-```
-
-```asm
-STR  X0, [X1, #8]!     ; X1 += 8, then store X0 at new X1
-```
-
-**In the prologue — saving register pairs:**
-
-Pre-index is used heavily in function prologues to save callee-saved registers
-while simultaneously allocating stack space:
-
-```asm
-STP  X29, X30, [SP, #-16]!   ; SP -= 16, then store FP and LR at new SP
-;                              ; this both allocates stack space AND saves regs
-;                              ; in one instruction
-```
-
----
-
-### Mode 5 — Post-Index
-
-```
-Address  = Base_Register (original value, BEFORE any update)
-Base_Register is UPDATED AFTER the memory access
-```
-
-```asm
-LDR  X0, [X1], #8      ; 1. load from X1 (original value)
-                        ; 2. X1 = X1 + 8   ← update AFTER load
-```
-
-No `!` here — the offset comes **after** the closing `]`. The memory access
-uses the original base register value, then the register advances.
-
-**When is this useful?**
-
-Iterating through an array — read the current element, then advance the pointer
-to the next one:
-
-```c
-while (n--) {
-    process(*ptr);
-    ptr++;             // advance after reading — this is post-index
+  let Pattern     = [];
+  let Constraints = cstr;
 }
 ```
 
-```asm
-loop:
-    LDR  W2, [X0], #4  ; load *ptr (W2 = *X0), then X0 += 4
-    BL   process
-    SUBS X1, X1, #1
-    B.NE loop
-```
+**Key fields explained:**
 
-**In the epilogue — restoring register pairs:**
-
-Post-index is used in function epilogues to restore callee-saved registers
-while simultaneously deallocating stack space:
-
-```asm
-LDP  X29, X30, [SP], #16   ; load FP and LR from SP, then SP += 16
-;                            ; this both restores regs AND deallocates stack
-;                            ; in one instruction
-```
+| Field | What it is |
+|---|---|
+| `bits<32> Inst` | The actual 32-bit binary encoding of the instruction |
+| `bits<32> Unpredictable` | Bits that, if set differently from `Inst`, make the instruction UNPREDICTABLE (hardware may do anything) |
+| `TSFlags` | Target-specific flags packed into a single integer — used by passes to query instruction properties without string comparisons |
+| `Constraints` | Register constraints, e.g. `"$Rd = $Rn"` for tied operands |
 
 ---
 
-### All Five Modes Side by Side
+## Pseudo vs Real Instructions
 
-```
-Mode              Assembly Example          Address Used       Base Updated?
-──────────────────────────────────────────────────────────────────────────────
-Base + Scaled     LDR X0, [X1, #8]          X1 + 8             No
-Immediate
-
-Base + Unscaled   LDUR X0, [X1, #-8]        X1 - 8             No
-Immediate
-
-Base + Register   LDR X0, [X1, X2, LSL #3]  X1 + X2*8          No
-
-Pre-Index         LDR X0, [X1, #8]!         X1 + 8             Yes, BEFORE
-                                                                X1 = X1 + 8
-
-Post-Index        LDR X0, [X1], #8          X1 (original)      Yes, AFTER
-                                                                X1 = X1 + 8
-```
-
-```
-Offset range summary:
-  Scaled immediate:   0 to 4095 × data_size  (must be aligned, non-negative)
-  Unscaled immediate: -256 to +255           (any byte offset, can be negative)
-  Register offset:    full 64-bit range      (runtime computed)
-```
-
----
-
-### How the Compiler Picks a Mode
-
-The compiler sees LLVM IR like this:
-
-```llvm
-%val = load i64, ptr %ptr
-```
-
-It does not say which addressing mode to use. The instruction selector in
-`AArch64ISelDAGToDAG.cpp` tries each mode in order and picks the first one
-that fits:
-
-```
-Step 1: Is the offset a constant that fits in 12-bit scaled form?
-        → use LDR [base, #imm]          (Mode 1 — SelectAddrModeIndexed)
-
-Step 2: Is the offset a constant in [-256, +255]?
-        → use LDUR [base, #imm]         (Mode 2 — SelectAddrModeUnscaled)
-
-Step 3: Is the offset in a W register (with optional sign/zero extend)?
-        → use LDR [base, Wreg, UXTW]    (Mode 3 — SelectAddrModeWRO)
-
-Step 4: Is the offset in an X register (with optional shift)?
-        → use LDR [base, Xreg, LSL #n]  (Mode 3 — SelectAddrModeXRO)
-
-Step 5: Nothing fits
-        → materialize the full address in a register first
-        → use LDR [Xreg]
-```
-
-Pre-index and post-index (Modes 4 and 5) are matched separately by
-`tryIndexedLoad()` — the compiler looks for patterns like
-`load(ptr + offset); ptr = ptr + offset` and folds them into a single
-indexed instruction.
-
----
-
-### How This Maps to Code in AArch64ISelDAGToDAG.cpp
-
-Every addressing mode has a corresponding C++ selector function and a
-TableGen `ComplexPattern` that hooks them together:
-
-```
-TableGen ComplexPattern          C++ Selector Function
-─────────────────────────────────────────────────────────────────────
-am_indexed8                  →   SelectAddrModeIndexed8(N, Base, OffImm)
-am_indexed16                 →   SelectAddrModeIndexed16(N, Base, OffImm)
-am_indexed32                 →   SelectAddrModeIndexed32(N, Base, OffImm)
-am_indexed64                 →   SelectAddrModeIndexed64(N, Base, OffImm)
-am_indexed128                →   SelectAddrModeIndexed128(N, Base, OffImm)
-
-am_unscaled8                 →   SelectAddrModeUnscaled8(N, Base, OffImm)
-am_unscaled16                →   SelectAddrModeUnscaled16(N, Base, OffImm)
-am_unscaled32                →   SelectAddrModeUnscaled32(N, Base, OffImm)
-am_unscaled64                →   SelectAddrModeUnscaled64(N, Base, OffImm)
-am_unscaled128               →   SelectAddrModeUnscaled128(N, Base, OffImm)
-
-ro_Windexed8                 →   SelectAddrModeWRO<8>(N, Base, Off, SE, DS)
-ro_Windexed32                →   SelectAddrModeWRO<32>(N, Base, Off, SE, DS)
-ro_Windexed64                →   SelectAddrModeWRO<64>(N, Base, Off, SE, DS)
-
-ro_Xindexed8                 →   SelectAddrModeXRO<8>(N, Base, Off, SE, DS)
-ro_Xindexed32                →   SelectAddrModeXRO<32>(N, Base, Off, SE, DS)
-ro_Xindexed64                →   SelectAddrModeXRO<64>(N, Base, Off, SE, DS)
-```
-
-The number suffix (8, 16, 32, 64, 128) is the **data size in bits**. The same
-selector logic is reused for all sizes — only the scale factor changes.
-
----
-
-## Part 2 — AAPCS64 Calling Convention
-
-### What is a Calling Convention?
-
-When function `foo` calls function `bar`, they need to agree on a set of rules:
-
-1. **Where do arguments go?** — which registers, or the stack
-2. **Where does the return value go?** — which register
-3. **Which registers does `bar` promise not to destroy?** — callee-saved
-4. **Who cleans up the stack?** — caller or callee
-
-Without this agreement, `foo` might put an argument in `X0` but `bar` reads it
-from `X1` — the program produces garbage. The **calling convention** is the
-contract that both sides follow.
-
-**AAPCS64** = **A**rchitecture **P**rocedure **C**all **S**tandard for
-**64**-bit AArch64. It is the standard contract used on Linux, Android, and
-most non-Apple platforms.
-
-In LLVM, these rules are written in `AArch64CallingConvention.td` as a list of
-`CCIfType` / `CCAssignToReg` / `CCAssignToStack` rules that are evaluated
-top-to-bottom for each argument.
-
----
-
-### Rule 1 — Integer Arguments: X0–X7
+There are two kinds of instructions in the backend:
 
 ```tablegen
-// AArch64CallingConvention.td
-CCIfType<[i64], CCAssignToReg<[X0, X1, X2, X3, X4, X5, X6, X7]>>,
-CCIfType<[i32], CCAssignToReg<[W0, W1, W2, W3, W4, W5, W6, W7]>>,
-```
-
-The first 8 integer arguments go into registers, left to right.
-
-```c
-void foo(int a, int b, int c, int d,
-         int e, int f, int g, int h);
-//           W0     W1     W2     W3
-//           W4     W5     W6     W7
-```
-
-```asm
-; calling foo(1, 2, 3, 4, 5, 6, 7, 8):
-MOV  W0, #1
-MOV  W1, #2
-MOV  W2, #3
-MOV  W3, #4
-MOV  W4, #5
-MOV  W5, #6
-MOV  W6, #7
-MOV  W7, #8
-BL   foo
-```
-
----
-
-### Rule 2 — Small Integers Are Promoted
-
-```tablegen
-CCIfType<[i1, i8, i16], CCPromoteToType<i32>>,
-```
-
-`bool` (i1), `char` (i8), and `short` (i16) are too small for a 32-bit
-register slot but they still occupy a full register. They are
-**zero-extended to 32-bit** before being placed in `W0`–`W7`.
-
-```c
-void foo(char a, short b, bool c);
-//            W0       W1      W2
-//       (promoted  (promoted  (promoted
-//        to i32)    to i32)    to i32)
-```
-
-This means the callee can safely read `W0` as a 32-bit value — the upper bits
-are guaranteed to be zero.
-
----
-
-### Rule 3 — Float Arguments: S0–S7 / D0–D7
-
-```tablegen
-CCIfType<[f16],  CCAssignToReg<[H0, H1, H2, H3, H4, H5, H6, H7]>>,
-CCIfType<[f32],  CCAssignToReg<[S0, S1, S2, S3, S4, S5, S6, S7]>>,
-CCIfType<[f64],  CCAssignToReg<[D0, D1, D2, D3, D4, D5, D6, D7]>>,
-CCIfType<[f128, v2i64, v4i32, v8i16, v16i8, v4f32, v2f64, v8f16, v8bf16],
-         CCAssignToReg<[Q0, Q1, Q2, Q3, Q4, Q5, Q6, Q7]>>,
-```
-
-Floating-point and NEON vector arguments use the FP/NEON registers —
-**completely separate** from the integer registers. This means a function can
-have up to 8 integer arguments AND 8 float arguments all in registers at the
-same time.
-
-```c
-void foo(int a, float b, int c, double d, int e, float f);
-//           X0      S0      X1       D1      X2      S2
-```
-
-Notice:
-- `a` → `X0` (first integer slot)
-- `b` → `S0` (first float slot — NOT X1)
-- `c` → `X1` (second integer slot)
-- `d` → `D1` (second float slot — NOT X2)
-- `e` → `X2` (third integer slot)
-- `f` → `S2` (third float slot)
-
-Integer and float register slots are counted **independently**. Using a float
-argument does not consume an integer register slot, and vice versa.
-
----
-
-### Rule 4 — More Than 8 Arguments Go on the Stack
-
-```tablegen
-CCIfType<[i64, f64, ...],          CCAssignToStack<8,  8>>,
-CCIfType<[f128, v2i64, v4i32, ...], CCAssignToStack<16, 16>>,
-```
-
-The 9th integer argument (and beyond) goes onto the stack. The caller allocates
-the space and the callee reads from `[SP + offset]`.
-
-```c
-void foo(int a, int b, int c, int d,
-         int e, int f, int g, int h,
-         int i,   // 9th  → [SP + 0]
-         int j);  // 10th → [SP + 8]
-//           X0  X1  X2  X3  X4  X5  X6  X7
-```
-
-```asm
-; caller sets up the 9th and 10th arguments on the stack:
-MOV  W0, #1
-; ... W1-W7 for args 2-8 ...
-MOV  W9, #9
-STR  W9, [SP, #0]    ; 9th argument on stack
-MOV  W9, #10
-STR  W9, [SP, #8]    ; 10th argument on stack
-BL   foo
-```
-
-The `CCAssignToStack<8, 8>` means: allocate 8 bytes on the stack, aligned to
-8 bytes.
-
----
-
-### Rule 5 — Return Values
-
-```tablegen
-// RetCC_AArch64_AAPCS
-CCIfType<[i32], CCAssignToReg<[W0, W1, W2, W3, W4, W5, W6, W7]>>,
-CCIfType<[i64], CCAssignToReg<[X0, X1, X2, X3, X4, X5, X6, X7]>>,
-CCIfType<[f32], CCAssignToReg<[S0, S1, S2, S3, S4, S5, S6, S7]>>,
-CCIfType<[f64], CCAssignToReg<[D0, D1, D2, D3, D4, D5, D6, D7]>>,
-```
-
-A single return value goes in `X0` (integer) or `S0`/`D0` (float). Multiple
-return values (e.g., returning a struct that fits in registers) can use
-`X0`–`X7`.
-
-```c
-int   foo() { return 42;   }   // result in W0
-float bar() { return 3.14; }   // result in S0
-long  baz() { return 100L; }   // result in X0
-```
-
----
-
-### Rule 6 — Callee-Saved Registers
-
-```tablegen
-// AArch64CallingConvention.td
-def CSR_AArch64_AAPCS : CalleeSavedRegs<(add
-    X19, X20, X21, X22, X23, X24, X25, X26, X27, X28,
-    LR, FP,
-    D8, D9, D10, D11, D12, D13, D14, D15)>;
-```
-
-These are the registers that a function **must preserve**. If `bar` wants to
-use `X19`, it must save it to the stack in the prologue and restore it in the
-epilogue.
-
-```
-Callee-saved (bar MUST preserve):   X19–X28, FP (X29), LR (X30), D8–D15
-Caller-saved (bar CAN destroy):     X0–X18, D0–D7, D16–D31
-```
-
-```asm
-bar:
-    ; prologue — save callee-saved registers we want to use
-    STP  X19, X20, [SP, #-16]!   ; save X19 and X20
-
-    MOV  X19, X0                  ; now safe to use X19
-    ; ... do work ...
-
-    ; epilogue — restore before returning
-    LDP  X19, X20, [SP], #16     ; restore X19 and X20
-    RET
-```
-
-**Why does this list matter for LLVM?**
-
-The `CSR_AArch64_AAPCS` definition is used by:
-- `AArch64RegisterInfo::getCalleeSavedRegs()` — tells the register allocator
-  which registers need save/restore
-- `AArch64FrameLowering::spillCalleeSavedRegisters()` — generates the actual
-  STP/LDP instructions in the prologue/epilogue
-- `tcGPR64` register class — excludes these registers from tail call targets
-  (as discussed in the register file notes)
-
----
-
-### Rule 7 — Large Struct Return via X8 (SRet)
-
-```tablegen
-CCIfSRet<CCIfType<[i64], CCAssignToReg<[X8]>>>,
-```
-
-When a function returns a large struct that does not fit in registers, the
-**caller** allocates space for it and passes a **pointer to that space** in
-`X8`. The callee writes the result there. This is called **Struct Return**
-(SRet).
-
-```c
-struct Big { int a, b, c, d, e; };   // 20 bytes — too big for registers
-
-struct Big make_big() {
-    return (struct Big){1, 2, 3, 4, 5};
+// Pseudo: no encoding, only exists during compilation
+class Pseudo<dag oops, dag iops, list<dag> pattern, string cstr = "">
+    : AArch64Inst<PseudoFrm, cstr> {
+  let isCodeGenOnly = 1;  // never emitted as machine code
+  let isPseudo      = 1;
 }
 
-// Caller does:
-struct Big result;                    // allocate space
-make_big_with_hidden_ptr(&result);    // X8 = &result (hidden argument)
-// callee writes into *X8
+// Real: has a 32-bit encoding, gets emitted as machine code
+class EncodedI<string cstr, list<dag> pattern> : AArch64Inst<NormalFrm, cstr> {
+  let Size = 4;  // always 4 bytes
+}
 ```
+
+**Pseudo instructions** are placeholders used during compilation that get
+expanded into real instructions before the final binary is written. Examples:
+
+```tablegen
+// A tail call — no real encoding, expanded by AArch64FrameLowering
+def TCRETURNri : Pseudo<(outs), (ins tcGPR64:$dst, i32imm:$FPDiff), []>;
+
+// A function prologue placeholder
+def ADJCALLSTACKDOWN : Pseudo<(outs), (ins i32imm:$amt1, i32imm:$amt2), []>;
+```
+
+**Real instructions** have every bit of `Inst` defined. The MC layer reads
+these bit assignments to emit the final binary.
+
+---
+
+## How a Bit Field Becomes an Instruction
+
+Let's trace a concrete example — the `ADD` instruction (register form):
 
 ```asm
-; caller:
-ADD  X8, SP, #offset_of_result   ; X8 = pointer to result storage
-BL   make_big                     ; callee writes to *X8
+ADD  X0, X1, X2     ; X0 = X1 + X2
+```
 
-; callee (make_big):
-MOV  W9, #1
-STR  W9, [X8, #0]    ; result.a = 1
-MOV  W9, #2
-STR  W9, [X8, #4]    ; result.b = 2
-; ... etc
-RET
+In the AArch64 manual, this encodes as:
+
+```
+31 30 29 28    24 23 22 21 20    16 15    10 9     5 4     0
+ 1  0  0  01011  00  0  Rm[4:0]  000000   Rn[4:0]  Rd[4:0]
+```
+
+In TableGen, this is built up through a class hierarchy:
+
+```tablegen
+// Step 1: The base two-operand register class
+class BaseTwoOperandRegReg<bit sf, bit S, bits<6> opc, ...>
+  : I<...> {
+  bits<5> Rd;
+  bits<5> Rn;
+  bits<5> Rm;
+
+  let Inst{31}    = sf;        // 1 = 64-bit, 0 = 32-bit
+  let Inst{30}    = 0b0;
+  let Inst{29}    = S;         // 1 = set flags (ADDS), 0 = don't
+  let Inst{28-21} = 0b11010110; // fixed opcode group bits
+  let Inst{20-16} = Rm;        // 5-bit source register 2
+  let Inst{15-10} = opc;       // 6-bit operation code
+  let Inst{9-5}   = Rn;        // 5-bit source register 1
+  let Inst{4-0}   = Rd;        // 5-bit destination register
+}
+```
+
+When `ADD X0, X1, X2` is assembled:
+- `sf = 1` (64-bit operation)
+- `S = 0` (don't set flags)
+- `Rd = 0` (X0 = register 0)
+- `Rn = 1` (X1 = register 1)
+- `Rm = 2` (X2 = register 2)
+- `opc = 0b000000` (shift amount = 0, shift type = LSL)
+
+Result:
+```
+Bit 31:    1         (sf = 64-bit)
+Bit 30:    0
+Bit 29:    0         (S = no flags)
+Bits 28-21: 11010110 (fixed)
+Bits 20-16: 00010    (Rm = X2 = 2)
+Bits 15-10: 000000   (opc = LSL #0)
+Bits 9-5:   00001    (Rn = X1 = 1)
+Bits 4-0:   00000    (Rd = X0 = 0)
+
+Binary: 1000 1010 0000 0010 0000 0000 0010 0000
+Hex:    0x8A020020
 ```
 
 ---
 
-### Rule 8 — SVE / NEON Vector Arguments
+## Encoding Groups — Reading the Bit Layout
 
-```tablegen
-// SVE scalable vectors → Z0–Z7
-CCIfType<[nxv16i8, nxv8i16, nxv4i32, nxv2i64, ...],
-         CCAssignToReg<[Z0, Z1, Z2, Z3, Z4, Z5, Z6, Z7]>>,
+AArch64 instructions are divided into groups based on bits `[28:25]`. This is
+the first thing the hardware decoder looks at.
 
-// SVE predicates → P0–P3
-CCIfType<[nxv16i1, nxv8i1, nxv4i1, nxv2i1, nxv1i1, aarch64svcount],
-         CCAssignToReg<[P0, P1, P2, P3]>>,
-
-// NEON 128-bit vectors → Q0–Q7
-CCIfType<[v2i64, v4i32, v8i16, v16i8, v4f32, v2f64, v8f16, v8bf16],
-         CCAssignToReg<[Q0, Q1, Q2, Q3, Q4, Q5, Q6, Q7]>>,
+```
+Bits [28:25]   Group
+────────────   ──────────────────────────────────
+  00xx         Reserved / Data Processing (misc)
+  100x         Data Processing — Immediate
+  101x         Branches, Exception, System
+  x1x0         Loads and Stores
+  x101         Data Processing — Register
+  x111         Data Processing — SIMD/FP
 ```
 
-SVE vector arguments use `Z0–Z7` (up to 8 scalable vectors in registers).
-SVE predicate arguments use `P0–P3` (up to 4 predicates in registers). NEON
-128-bit vectors use `Q0–Q7`.
+### Group 1 — Data Processing (Register)
 
-If there are more SVE vectors than fit in `Z0–Z7`, they are passed indirectly:
+These instructions operate on registers only — no memory access, no immediates
+(except shift amounts).
 
 ```tablegen
-// If no Z register is available, pass a pointer instead
-CCIfType<[nxv16i8, ...], CCPassIndirect<i64>>,
-```
-
----
-
-### The Full Call Sequence — One Worked Example
-
-```c
-float compute(int a, float b, int c, float d) {
-    return a + b + c + d;
+// Shift instruction — LSL, LSR, ASR, ROR
+class BaseShift<bit size, bits<2> shift_type, RegisterClass regtype, ...>
+  : BaseTwoOperandRegReg<size, 0b0, {0,0,1,0,?,?}, regtype, ...> {
+  let Inst{11-10} = shift_type;  // 00=LSL, 01=LSR, 10=ASR, 11=ROR
 }
 
-// calling it:
-float result = compute(10, 3.14f, 20, 2.71f);
+// Multiply-accumulate — MADD, MSUB
+class BaseMulAccum<bit isSub, bits<3> opc, ...> : I<...> {
+  bits<5> Rd;
+  bits<5> Rn;
+  bits<5> Rm;
+  bits<5> Ra;  // accumulate register
+  let Inst{30-24} = 0b0011011;
+  let Inst{23-21} = opc;
+  let Inst{20-16} = Rm;
+  let Inst{15}    = isSub;  // 0=MADD (add), 1=MSUB (subtract)
+  let Inst{14-10} = Ra;
+  let Inst{9-5}   = Rn;
+  let Inst{4-0}   = Rd;
+}
 ```
 
-**Step 1 — Caller assigns arguments:**
+### Group 2 — Data Processing (Immediate)
 
-```
-Argument   Type    Register   Rule
-─────────────────────────────────────────────────────
-a = 10     i32     W0         Rule 1: first integer slot
-b = 3.14   f32     S0         Rule 3: first float slot
-c = 20     i32     W1         Rule 1: second integer slot (W0 already used)
-d = 2.71   f32     S1         Rule 3: second float slot (S0 already used)
-```
-
-**Step 2 — Caller emits setup code:**
-
-```asm
-MOV   W0, #10          ; a
-FMOV  S0, #3.14        ; b
-MOV   W1, #20          ; c
-FMOV  S1, #2.71        ; d
-BL    compute
-; result comes back in S0
-```
-
-**Step 3 — Callee reads arguments:**
-
-```asm
-compute:
-    ; a is in W0, b is in S0, c is in W1, d is in S1
-    SCVTF  S2, W0        ; convert a (int) to float
-    FADD   S2, S2, S0    ; S2 = a + b
-    SCVTF  S3, W1        ; convert c (int) to float
-    FADD   S2, S2, S3    ; S2 = a + b + c
-    FADD   S0, S2, S1    ; S0 = a + b + c + d  (return value goes in S0)
-    RET
-```
-
-**Step 4 — Caller reads return value:**
-
-```asm
-; after BL compute returns:
-; S0 = result (float)
-FSTR  S0, [SP, #result_offset]   ; store result
-```
-
----
-
-### How TableGen Encodes These Rules
-
-The calling convention is a **list of rules evaluated top to bottom**. Each
-rule has a condition and an action:
+These instructions have a register source and a constant value baked into the
+instruction bits.
 
 ```tablegen
-// AArch64CallingConvention.td — simplified view of CC_AArch64_AAPCS
-
-// Rule: if type is i1/i8/i16, promote to i32 first
-CCIfType<[i1, i8, i16], CCPromoteToType<i32>>,
-
-// Rule: if type is i32, try to assign to W0, W1, ..., W7 in order
-CCIfType<[i32], CCAssignToReg<[W0, W1, W2, W3, W4, W5, W6, W7]>>,
-
-// Rule: if type is i64, try to assign to X0, X1, ..., X7 in order
-CCIfType<[i64], CCAssignToReg<[X0, X1, X2, X3, X4, X5, X6, X7]>>,
-
-// Rule: if type is f32, try to assign to S0, S1, ..., S7 in order
-CCIfType<[f32], CCAssignToReg<[S0, S1, S2, S3, S4, S5, S6, S7]>>,
-
-// Rule: if no register is available, put it on the stack
-CCIfType<[i32, f32], CCAssignToStack<8, 8>>,
-CCIfType<[i64, f64, ...], CCAssignToStack<8, 8>>,
+// ADD/SUB with immediate — the immediate is 12 bits, optionally shifted by 12
+class addsub_shifted_imm<ValueType Ty>
+    : Operand<Ty>, ComplexPattern<Ty, 2, "SelectArithImmed", [imm]> {
+  let MIOperandInfo = (ops i32imm, i32imm);  // value + shift amount
+  // Encoding: {imm12, shift}
+  // shift = 0  → immediate is used as-is
+  // shift = 12 → immediate is shifted left by 12 bits
+}
 ```
 
-LLVM evaluates these rules for each argument in order. When a rule matches and
-a register is available, that register is assigned and marked as used. When all
-registers for a type are exhausted, the stack rule fires.
-
-There are two separate convention definitions:
-- `CC_AArch64_AAPCS` — used when the function **receives** arguments
-  (`LowerFormalArguments`)
-- `RetCC_AArch64_AAPCS` — used when the function **returns** a value
-  (`LowerReturn`) and when the caller **reads** the return value (`LowerCall`)
-
----
-
-### Variants of the Calling Convention
-
-The file defines several variants for different platforms and use cases:
-
-```
-CC_AArch64_AAPCS          Standard Linux/Android ABI
-CC_AArch64_DarwinPCS      Apple's variant (stack slots sized as needed,
-                           i128 doesn't need even registers)
-CC_AArch64_Win64PCS       Windows ABI
-CC_AArch64_GHC            Glasgow Haskell Compiler (uses X19–X28 for STG
-                           machine registers — callee-saved become args!)
-CC_AArch64_Preserve_None  Experimental: use ALL registers for arguments,
-                           nothing is preserved
-CC_AArch64_Arm64EC_Thunk  Windows Arm64EC x64-compatible thunk ABI
+Example:
+```asm
+ADD  X0, X1, #4096    ; 4096 = 0x1000 = 1 << 12
+                       ; encoded as: imm12=1, shift=12
+ADD  X0, X1, #1       ; encoded as: imm12=1, shift=0
 ```
 
-The callee-saved register lists also have variants:
+### Group 3 — Branches
+
+Branch instructions encode a **PC-relative offset** — the distance from the
+current instruction to the target, in units of 4 bytes (since all instructions
+are 4 bytes).
 
 ```tablegen
-CSR_AArch64_AAPCS          Standard: X19-X28, LR, FP, D8-D15
-CSR_AArch64_AAVPCS         Vector PCS: adds Q8-Q23 (full NEON preservation)
-CSR_AArch64_SVE_AAPCS      SVE: adds Z8-Z23, P4-P15
-CSR_Darwin_AArch64_AAPCS   Darwin: same registers, different stack layout
-                            (LR, FP at top of callee-save area)
-CSR_AArch64_NoRegs         No registers saved (used for special stubs)
+// Unconditional branch — 26-bit signed offset
+class BImm<bit op, dag iops, string asm, list<dag> pattern> : I<...> {
+  bits<26> addr;
+  let Inst{31}    = op;       // 0=B, 1=BL
+  let Inst{30-26} = 0b00101;  // fixed
+  let Inst{25-0}  = addr;     // 26-bit PC-relative offset
+}
+```
+
+The 26-bit field encodes `(target - PC) / 4`. Since instructions are always
+4-byte aligned, the bottom 2 bits of the offset are always zero and are not
+stored. This gives a range of ±128 MB.
+
+```tablegen
+// Conditional branch — 19-bit signed offset
+class BranchCond<bit bit4, string mnemonic> : I<...> {
+  bits<4>  cond;    // condition code (EQ, NE, LT, GT, etc.)
+  bits<19> target;  // 19-bit PC-relative offset → ±1 MB range
+  let Inst{31-24} = 0b01010100;
+  let Inst{23-5}  = target;
+  let Inst{4}     = bit4;
+  let Inst{3-0}   = cond;
+}
+```
+
+```tablegen
+// Test-and-branch — 14-bit offset, plus a bit number to test
+class BaseTestBranch<...> : I<...> {
+  bits<5>  Rt;       // register to test
+  bits<6>  bit_off;  // which bit to test (0-63)
+  bits<14> target;   // 14-bit PC-relative offset → ±32 KB range
+  let Inst{30-25} = 0b011011;
+  let Inst{24}    = op;           // 0=TBZ, 1=TBNZ
+  let Inst{23-19} = bit_off{4-0}; // lower 5 bits of bit number
+  let Inst{18-5}  = target;
+  let Inst{4-0}   = Rt;
+}
+```
+
+### Group 4 — Load / Store
+
+Load/store instructions encode the addressing mode in specific bit fields.
+
+```tablegen
+// Authenticated load (v8.3 PAC)
+class BaseAuthLoad<bit M, bit W, ...> : I<...> {
+  bits<10> offset;  // 10-bit signed scaled offset
+  bits<5>  Rn;      // base register
+  bits<5>  Rt;      // target register
+  let Inst{31-24} = 0b11111000;
+  let Inst{23}    = M;           // modifier (key A or B)
+  let Inst{22}    = offset{9};   // sign bit of offset
+  let Inst{21}    = 1;
+  let Inst{20-12} = offset{8-0}; // lower 9 bits of offset
+  let Inst{11}    = W;           // writeback
+  let Inst{10}    = 1;
+  let Inst{9-5}   = Rn;
+  let Inst{4-0}   = Rt;
+}
 ```
 
 ---
 
-### Connection to Callee-Saved and Tail Calls
+## Operand Encoding — Immediates
 
-Everything in this document connects back to the tail call register classes
-discussed in the register file notes:
+### Unsigned Immediates
 
-```
-AAPCS64 callee-saved:   X19–X28, FP, LR, D8–D15
-                                ↓
-These are the registers the epilogue RESTORES before returning
-                                ↓
-A tail call jump happens AFTER the epilogue
-                                ↓
-Any value stored in X19–X28/FP/LR is OVERWRITTEN by the epilogue
-                                ↓
-The jump target register must survive the epilogue
-                                ↓
-Only X0–X18 survive (caller-saved — epilogue never touches them)
-                                ↓
-tcGPR64 = GPR64 minus {X19–X28, FP, LR}
-        = exactly {X0–X18}
+```tablegen
+// uimm6: unsigned 6-bit immediate, range [0, 63]
+def uimm6 : Operand<i64>, ImmLeaf<i64, [{ return Imm >= 0 && Imm < 64; }]> {
+  let ParserMatchClass = UImm6Operand;
+}
+
+// uimm8: unsigned 8-bit immediate, range [0, 255]
+def uimm8_32b : Operand<i32>, ImmLeaf<i32, [{ return Imm >= 0 && Imm < 256; }]>;
+
+// uimm16: unsigned 16-bit immediate, range [0, 65535]
+def uimm16 : Operand<i16>, ImmLeaf<i16, [{return Imm >= 0 && Imm < 65536;}]>;
 ```
 
-The calling convention definition (`CSR_AArch64_AAPCS`) and the tail call
-register class (`tcGPR64`) are two sides of the same coin — one defines what
-must be preserved, the other defines what is safe to use after preservation
-has happened.
+`ImmLeaf` is a TableGen class that defines both:
+1. A **predicate** (the `[{ ... }]` block) — checked at instruction selection
+   time to verify the constant fits
+2. An **operand type** — used to match the right instruction variant
+
+### Signed Immediates
+
+```tablegen
+// simm9: signed 9-bit immediate, range [-256, 255]
+// Used for LDUR/STUR unscaled offset
+def simm9 : Operand<i64>, ImmLeaf<i64, [{ return Imm >= -256 && Imm < 256; }]> {
+  let DecoderMethod = "DecodeSImm<9>";
+}
+
+// simm7s4: signed 7-bit immediate, scaled by 4
+// Range: [-256, 252] in steps of 4
+// Used for LDP/STP (load/store pair)
+def simm7s4 : Operand<i32> {
+  let ParserMatchClass = SImm7s4Operand;
+  let PrintMethod = "printImmScale<4>";
+}
+```
+
+### Scaled Immediates
+
+Many immediates are **scaled** — the value stored in the instruction bits is
+the actual byte offset divided by the data size. This allows a small bit field
+to cover a large byte range.
+
+```tablegen
+// The scale transform: divide by N before encoding, multiply by N when decoding
+def UImmS2XForm : SDNodeXForm<imm, [{
+  return CurDAG->getTargetConstant(N->getZExtValue() / 2, SDLoc(N), MVT::i64);
+}]>;
+def UImmS4XForm : SDNodeXForm<imm, [{
+  return CurDAG->getTargetConstant(N->getZExtValue() / 4, SDLoc(N), MVT::i64);
+}]>;
+def UImmS8XForm : SDNodeXForm<imm, [{
+  return CurDAG->getTargetConstant(N->getZExtValue() / 8, SDLoc(N), MVT::i64);
+}]>;
+```
+
+`SDNodeXForm` is a TableGen transformation applied to an immediate value
+**before** it is encoded into the instruction. The decoder applies the inverse
+(multiply) when reading the binary back.
+
+Example — `uimm5s4` (5-bit unsigned, scaled by 4):
+
+```tablegen
+def uimm5s4 : Operand<i64>, ImmLeaf<i64,
+    [{ return Imm >= 0 && Imm < (32*4) && ((Imm % 4) == 0); }],
+    UImmS4XForm> {
+  let PrintMethod = "printImmScale<4>";
+}
+```
+
+- Predicate: value must be in `[0, 128)` and a multiple of 4
+- Transform: divide by 4 before encoding → stored as 5-bit value `[0, 31]`
+- Print: multiply by 4 when printing → shows the original byte offset
+
+### Logical Immediates — The Special Case
+
+Logical instructions (`AND`, `ORR`, `EOR`, `TST`) use a special encoding for
+their immediates. Not every 32-bit or 64-bit value can be encoded — only values
+that consist of a **repeating bit pattern**.
+
+```tablegen
+// AArch64InstrFormats.td
+def logical_imm32 : Operand<i32>, IntImmLeaf<i32, [{
+  return AArch64_AM::isLogicalImmediate(Imm.getZExtValue(), 32);
+}], logical_imm32_XFORM> {
+  let PrintMethod = "printLogicalImm<int32_t>";
+}
+
+def logical_imm64 : Operand<i64>, IntImmLeaf<i64, [{
+  return AArch64_AM::isLogicalImmediate(Imm.getZExtValue(), 64);
+}], logical_imm64_XFORM> {
+  let PrintMethod = "printLogicalImm<int64_t>";
+}
+```
+
+The encoding transform:
+
+```tablegen
+def logical_imm32_XFORM : SDNodeXForm<imm, [{
+  uint64_t enc = AArch64_AM::encodeLogicalImmediate(N->getZExtValue(), 32);
+  return CurDAG->getTargetConstant(enc, SDLoc(N), MVT::i32);
+}]>;
+```
+
+`AArch64_AM::encodeLogicalImmediate` converts the actual bit pattern into a
+13-bit encoded form `{N, immr, imms}`. The hardware decodes this back to the
+full 32/64-bit pattern.
+
+**Why this restriction?** The 32-bit instruction only has 13 bits for the
+immediate field. The encoding scheme allows representing useful patterns like
+`0xFF00FF00`, `0xAAAAAAAA`, `0x0000FFFF` — all values that are useful for
+masking operations.
+
+### Floating-Point Immediates
+
+```tablegen
+// 8-bit FP immediate — encodes a limited set of float values
+def fpimm32 : Operand<f32>,
+    FPImmLeaf<f32, [{
+      return AArch64_AM::getFP32Imm(Imm) != -1;
+    }], fpimm32XForm> {
+  let PrintMethod = "printFPImmOperand";
+}
+
+def fpimm32XForm : SDNodeXForm<fpimm, [{
+  uint32_t Enc = AArch64_AM::getFP32Imm(N->getValueAPF());
+  return CurDAG->getTargetConstant(Enc, SDLoc(N), MVT::i32);
+}]>;
+```
+
+Only 256 specific float values can be encoded as an 8-bit immediate in FMOV.
+The format is `±1.mantissa × 2^exponent` where mantissa is 4 bits and exponent
+is 3 bits. Values like `1.0`, `2.0`, `0.5`, `-1.0` are encodable; arbitrary
+floats like `3.14` are not and must be loaded from a constant pool.
+
+---
+
+## Operand Encoding — Shifts and Extends
+
+### Arithmetic Shifted Register
+
+```tablegen
+// Encoding: {shift_type[1:0], shift_amount[5:0]} = 8 bits total
+// shift_type: 00=LSL, 01=LSR, 10=ASR
+class arith_shift<ValueType Ty, int width> : Operand<Ty> {
+  let PrintMethod = "printShifter";
+}
+
+// A register + shift amount, used as a single operand
+class arith_shifted_reg<ValueType Ty, RegisterClass regclass, int width>
+    : Operand<Ty>,
+      ComplexPattern<Ty, 2, "SelectArithShiftedRegister", []> {
+  let MIOperandInfo = (ops regclass, !cast<Operand>("arith_shift" # width));
+}
+```
+
+Used in instructions like:
+```asm
+ADD  X0, X1, X2, LSL #3    ; X0 = X1 + (X2 << 3)
+SUB  X0, X1, X2, ASR #1    ; X0 = X1 - (X2 >> 1)  (arithmetic shift)
+```
+
+The shift type and amount are packed into a single 8-bit field in the
+instruction encoding.
+
+### Logical Shifted Register
+
+```tablegen
+// Encoding: {shift_type[1:0], shift_amount[5:0]} = 8 bits
+// shift_type: 00=LSL, 01=LSR, 10=ASR, 11=ROR  (ROR allowed for logical ops)
+class logical_shift<int width> : Operand<i32> {
+  let PrintMethod = "printShifter";
+}
+
+class logical_shifted_reg<ValueType Ty, RegisterClass regclass, Operand shiftop>
+    : Operand<Ty>,
+      ComplexPattern<Ty, 2, "SelectLogicalShiftedRegister", []> {
+  let MIOperandInfo = (ops regclass, shiftop);
+}
+```
+
+Used in:
+```asm
+AND  X0, X1, X2, ROR #4    ; X0 = X1 & rotate_right(X2, 4)
+ORR  X0, X1, X2, LSL #8    ; X0 = X1 | (X2 << 8)
+```
+
+### Extended Register
+
+```tablegen
+// Encoding: {extend_type[2:0], shift_amount[2:0]} = 6 bits
+// extend_type: UXTB=000, UXTH=001, UXTW=010, UXTX=011
+//              SXTB=100, SXTH=101, SXTW=110, SXTX=111
+def arith_extend : Operand<i32> {
+  let PrintMethod = "printArithExtend";
+}
+
+class arith_extended_reg32<ValueType Ty> : Operand<Ty>,
+    ComplexPattern<Ty, 2, "SelectArithExtendedRegister", []> {
+  let MIOperandInfo = (ops GPR32, arith_extend);
+}
+```
+
+Used in:
+```asm
+ADD  X0, X1, W2, UXTW #2   ; X0 = X1 + zero_extend(W2) << 2
+ADD  X0, SP, X1, LSL #3    ; X0 = SP + X1 * 8  (pointer arithmetic)
+```
+
+The extend type tells the hardware how to widen the source register before
+adding. This is essential for pointer arithmetic where an array index (32-bit)
+needs to be added to a 64-bit base address.
+
+---
+
+## Operand Encoding — Branches and PC-Relative Labels
+
+```tablegen
+// 26-bit branch target (B / BL)
+def am_b_target : Operand<OtherVT> {
+  let EncoderMethod = "getBranchTargetOpValue";
+  let DecoderMethod = "DecodeUnconditionalBranch";
+  let PrintMethod   = "printAlignedLabel";
+  let OperandType   = "OPERAND_PCREL";
+}
+
+// 19-bit conditional branch target (B.cond, CBZ, CBNZ)
+def am_brcond : Operand<OtherVT> {
+  let EncoderMethod = "getCondBranchTargetOpValue";
+  let DecoderMethod = "DecodePCRelLabel19";
+  let PrintMethod   = "printAlignedLabel";
+  let OperandType   = "OPERAND_PCREL";
+}
+
+// 14-bit test-and-branch target (TBZ, TBNZ)
+def am_tbrcond : Operand<OtherVT> {
+  let EncoderMethod = "getTestBranchTargetOpValue";
+  let PrintMethod   = "printAlignedLabel";
+  let OperandType   = "OPERAND_PCREL";
+}
+```
+
+All branch targets are `OPERAND_PCREL` — they are encoded as a **signed
+offset from the current PC**, divided by 4 (since instructions are 4-byte
+aligned). The assembler computes `(target_address - current_PC) / 4` and
+stores that value in the instruction bits.
+
+```
+Branch type    Bit field   Range (bytes)
+────────────   ─────────   ─────────────
+B / BL         26-bit      ±128 MB
+B.cond         19-bit      ±1 MB
+CBZ / CBNZ     19-bit      ±1 MB
+TBZ / TBNZ     14-bit      ±32 KB
+```
+
+---
+
+## TSFlags — Per-Instruction Metadata
+
+`TSFlags` is a 64-bit integer attached to every `MachineInstr`. The AArch64
+backend packs several properties into the low 14 bits:
+
+```tablegen
+// AArch64InstrFormats.td
+let TSFlags{13-11} = SMEMatrixType.Value;     // which SME matrix type
+let TSFlags{10}    = isPTestLike;             // SVE predicate test
+let TSFlags{9}     = isWhile;                 // SVE while loop instruction
+let TSFlags{8-7}   = FalseLanes.Value;        // SVE false lane behaviour
+let TSFlags{6-3}   = DestructiveInstType.Value; // SVE destructive operand
+let TSFlags{2-0}   = ElementSize.Value;       // element size (B/H/S/D/Q)
+```
+
+**Why TSFlags?**
+
+Passes that process instructions need to query properties quickly. Instead of
+doing string comparisons on instruction names, they read a bit field:
+
+```cpp
+// Example: checking if an instruction is a SVE "while" instruction
+bool isWhileOpcode(unsigned Opcode) {
+  const MCInstrDesc &Desc = TII->get(Opcode);
+  return (Desc.TSFlags >> AArch64::IsWhileShift) & 1;
+}
+```
+
+**The DestructiveInstType field** is particularly important for SVE. SVE
+instructions are often "destructive" — the destination register is also one
+of the source registers. The `MOVPRFX` instruction can be inserted before a
+destructive instruction to break this dependency. The `DestructiveInstType`
+field tells the `AArch64MovePrefixPass` which instructions need this treatment:
+
+```tablegen
+def NotDestructive               : DestructiveInstTypeEnum<0>;
+def DestructiveOther             : DestructiveInstTypeEnum<1>;
+def DestructiveUnary             : DestructiveInstTypeEnum<2>;
+def DestructiveBinaryImm         : DestructiveInstTypeEnum<3>;
+def DestructiveBinary            : DestructiveInstTypeEnum<5>;
+def DestructiveBinaryComm        : DestructiveInstTypeEnum<6>;
+def DestructiveBinaryCommWithRev : DestructiveInstTypeEnum<7>;
+```
+
+---
+
+## The Unpredictable Field
+
+```tablegen
+// AArch64InstrFormats.td
+field bits<32> Unpredictable = 0;
+field bits<32> SoftFail = Unpredictable;
+```
+
+Some instruction encodings have **reserved bits** — bits that the architecture
+says must be zero (or one), but if they are set differently, the hardware
+behaviour is **unpredictable** (the CPU may do anything, including crash).
+
+```tablegen
+// Example: SMULH — the Ra field must be 0b11111 but is ignored
+class MulHi<bits<3> opc, string asm, SDNode OpNode> : I<...> {
+  let Inst{14-10} = 0b11111;
+  let Unpredictable{14-10} = 0b11111;  // if these bits differ, UNPREDICTABLE
+}
+```
+
+The `SoftFail` alias is used by the disassembler — if it encounters an
+instruction where the `Unpredictable` bits are set, it marks the instruction
+as a soft failure (decoded but flagged as potentially wrong) rather than a
+hard failure (completely unrecognised).
+
+---
+
+## ComplexPattern — Bridging TableGen and C++
+
+Some operand matching is too complex to express in TableGen's pattern language.
+`ComplexPattern` is the escape hatch — it calls a C++ function to do the
+matching.
+
+```tablegen
+// TableGen side: declare the pattern
+def am_indexed32 : ComplexPattern<iPTR, 2, "SelectAddrModeIndexed32", []>;
+//                                ^^^^  ^   ^^^^^^^^^^^^^^^^^^^^^^^^
+//                                type  num  C++ function name
+//                                      outputs
+```
+
+```cpp
+// C++ side: implement the matching
+bool AArch64DAGToDAGISel::SelectAddrModeIndexed32(SDValue N,
+                                                   SDValue &Base,
+                                                   SDValue &OffImm) {
+  return SelectAddrModeIndexed(N, 4, Base, OffImm);
+  //                              ^
+  //                              Size = 4 bytes (32-bit)
+}
+```
+
+The `2` in `ComplexPattern<iPTR, 2, ...>` means the pattern produces **2
+output operands** — `Base` and `OffImm`. These become separate operands in the
+`MachineInstr`.
+
+Similarly for shifted registers:
+
+```tablegen
+def arith_shifted_reg32 : arith_shifted_reg<i32, GPR32, 32>;
+// ComplexPattern<i32, 2, "SelectArithShiftedRegister", []>
+// Produces 2 outputs: the register and the shift operand
+```
+
+---
+
+## How Everything Connects — End to End
+
+Here is the complete journey from C source code to a 32-bit instruction binary:
+
+```
+C source:
+  int foo(int *arr, int i) { return arr[i]; }
+
+         │
+         ▼ Clang
+LLVM IR:
+  %ptr = getelementptr i32, ptr %arr, i64 %i
+  %val = load i32, ptr %ptr
+
+         │
+         ▼ SelectionDAG (AArch64ISelDAGToDAG.cpp)
+
+SelectAddrModeWRO<32> matches the address:
+  Base   = %arr  (X0)
+  Offset = %i    (W1)
+  SignExtend = 0 (UXTW)
+  DoShift    = 1 (scale by 4)
+
+Selects instruction:
+  LDR W0, [X0, W1, UXTW #2]
+
+         │
+         ▼ MachineInstr created
+
+MachineInstr: LDRWroW
+  Operands: W0 (def), X0 (base), W1 (offset), 0 (SignExtend), 1 (DoShift)
+
+         │
+         ▼ MC Layer (AArch64MCCodeEmitter.cpp)
+
+Reads bit assignments from AArch64InstrFormats.td:
+  Inst{31-30} = 0b10        (size = 32-bit)
+  Inst{29-27} = 0b111       (load/store register)
+  Inst{26}    = 0b0         (not SIMD)
+  Inst{25-24} = 0b10        (register offset)
+  Inst{23-22} = 0b01        (load, unsigned)
+  Inst{21}    = 0b1         (register offset mode)
+  Inst{20-16} = 0b00001     (W1 = register 1)
+  Inst{15-13} = 0b010       (UXTW)
+  Inst{12}    = 0b1         (shift = #2)
+  Inst{11-10} = 0b10        (fixed)
+  Inst{9-5}   = 0b00000     (X0 = register 0)
+  Inst{4-0}   = 0b00000     (W0 = register 0)
+
+         │
+         ▼ Binary output
+
+0xB8610800   (4 bytes, little-endian in the .o file)
+```
+
+Every step is driven by the bit field assignments in `AArch64InstrFormats.td`.
+The C++ code in the instruction selector, MC emitter, and disassembler all read
+from the same TableGen-generated tables — there is one source of truth for the
+encoding.
