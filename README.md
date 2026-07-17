@@ -1,9 +1,6 @@
-C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow>bazel build --config=release_cpu_windows_arm64_minimal --repo_env=HERMETIC_PYTHON_VERSION=3.13 --repo_env=TF_PYTHON_VERSION=3.13 --local_ram_resources=HOST_RAM*0.5 --jobs=4 //tensorflow/tools/pip_package:wheel --verbose_failures
+METIC_PYTHON_VERSION=3.13 --repo_env=TF_PYTHON_VERSION=3.13 --local_resources=memory=HOST_RAM*0.5 --jobs=4 --@com_google_absl//absl:use_dlls=False --@com_google_protobuf//build_defs:use_dlls=False //tensorflow/tools/pip_package:wheel --verbose_failures
 WARNING: Ignoring JAVA_HOME, because it must point to a JDK, not a JRE.
-WARNING: Running Bazel server needs to be killed, because the startup options are different.
-Starting local Bazel server and connecting to it...
 WARNING: The following configs were expanded more than once: [clang_local]. For repeatable flags, repeats are counted twice and may lead to unexpected behavior.
-WARNING: Option 'local_ram_resources' is deprecated: --local_ram_resources is deprecated, please use --local_resources=memory= instead.
 INFO: Reading 'startup' options from c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --windows_enable_symlinks
 INFO: Options provided by the client:
   Inherited 'common' options: --isatty=1 --terminal_columns=120
@@ -26,23 +23,9 @@ INFO: Found applicable config definition common:windows in file c:\users\hcktest
 INFO: Found applicable config definition common:monolithic in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --define framework_shared_object=false --define tsl_protobuf_header_only=false --experimental_link_static_libraries_once=false
 INFO: Found applicable config definition common:clang_local in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --noincompatible_enable_cc_toolchain_resolution --noincompatible_enable_android_toolchain_resolution --@rules_ml_toolchain//common:enable_hermetic_cc=False --repo_env USE_HERMETIC_CC_TOOLCHAIN=0
 INFO: Found applicable config definition common:no_tfrt in file c:\users\hcktest\desktop\mugunth\source\tensorflow\.bazelrc: --deleted_packages=tensorflow/compiler/mlir/tfrt,tensorflow/compiler/mlir/tfrt/benchmarks,tensorflow/compiler/mlir/tfrt/ir,tensorflow/compiler/mlir/tfrt/ir/mlrt,tensorflow/compiler/mlir/tfrt/jit/python_binding,tensorflow/compiler/mlir/tfrt/jit/transforms,tensorflow/compiler/mlir/tfrt/python_tests,tensorflow/compiler/mlir/tfrt/tests,tensorflow/compiler/mlir/tfrt/tests/ifrt,tensorflow/compiler/mlir/tfrt/tests/mlrt,tensorflow/compiler/mlir/tfrt/tests/ir,tensorflow/compiler/mlir/tfrt/tests/analysis,tensorflow/compiler/mlir/tfrt/tests/jit,tensorflow/compiler/mlir/tfrt/tests/lhlo_to_tfrt,tensorflow/compiler/mlir/tfrt/tests/lhlo_to_jitrt,tensorflow/compiler/mlir/tfrt/tests/tf_to_corert,tensorflow/compiler/mlir/tfrt/tests/tf_to_tfrt_data,tensorflow/compiler/mlir/tfrt/tests/saved_model,tensorflow/compiler/mlir/tfrt/transforms/lhlo_gpu_to_tfrt_gpu,tensorflow/compiler/mlir/tfrt/transforms/mlrt,tensorflow/core/runtime_fallback,tensorflow/core/runtime_fallback/conversion,tensorflow/core/runtime_fallback/kernel,tensorflow/core/runtime_fallback/opdefs,tensorflow/core/runtime_fallback/runtime,tensorflow/core/runtime_fallback/util,tensorflow/core/runtime_fallback/test,tensorflow/core/runtime_fallback/test/gpu,tensorflow/core/runtime_fallback/test/saved_model,tensorflow/core/runtime_fallback/test/testdata,tensorflow/core/tfrt/stubs,tensorflow/core/tfrt/tfrt_session,tensorflow/core/tfrt/mlrt,tensorflow/core/tfrt/mlrt/attribute,tensorflow/core/tfrt/mlrt/kernel,tensorflow/core/tfrt/mlrt/bytecode,tensorflow/core/tfrt/mlrt/interpreter,tensorflow/compiler/mlir/tfrt/translate/mlrt,tensorflow/compiler/mlir/tfrt/translate/mlrt/testdata,tensorflow/core/tfrt/gpu,tensorflow/core/tfrt/run_handler_thread_pool,tensorflow/core/tfrt/runtime,tensorflow/core/tfrt/saved_model,tensorflow/core/tfrt/graph_executor,tensorflow/core/tfrt/saved_model/tests,tensorflow/core/tfrt/tpu,tensorflow/core/tfrt/utils,tensorflow/core/tfrt/utils/debug,tensorflow/core/tfrt/saved_model/python,tensorflow/core/tfrt/graph_executor/python,tensorflow/core/tfrt/saved_model/utils
-DEBUG: C:/users/hcktest/_bazel_hcktest/b73u5zlo/external/rules_ml_toolchain/py/python_repo.bzl:108:14: !!!Using pywrap rules instead of directly creating .so objects!!!
-DEBUG: C:/users/hcktest/_bazel_hcktest/b73u5zlo/external/rules_ml_toolchain/py/python_repo.bzl:113:10:
-=============================
-Hermetic Python configuration:
-Version: "3.13"
-Kind: ""
-Interpreter: "default" (provided by rules_python)
-Requirements_lock label: "@python_version_repo//:requirements_lock_3_13.txt"
-=====================================
-DEBUG: C:/users/hcktest/desktop/mugunth/source/tensorflow/third_party/repo.bzl:141:14:
-Warning: skipping import of repository 'net_zstd' because it already exists.
-DEBUG: C:/users/hcktest/desktop/mugunth/source/tensorflow/third_party/repo.bzl:141:14:
-Warning: skipping import of repository 'rules_proto' because it already exists.
 WARNING: The following configs were expanded more than once: [clang_local]. For repeatable flags, repeats are counted twice and may lead to unexpected behavior.
-WARNING: Option 'local_ram_resources' is deprecated: --local_ram_resources is deprecated, please use --local_resources=memory= instead.
-DEBUG: C:/users/hcktest/_bazel_hcktest/b73u5zlo/external/com_google_protobuf/python/dist/system_python.bzl:225:14: WARNING: no system python available, builds against system python will fail
-INFO: Analyzed target //tensorflow/tools/pip_package:wheel (987 packages loaded, 52392 targets configured).
+WARNING: Build options --@@com_google_absl//absl:use_dlls and --@@com_google_protobuf//build_defs:use_dlls have changed, discarding analysis cache (this can be expensive, see https://bazel.build/advanced/performance/iteration-speed).
+INFO: Analyzed target //tensorflow/tools/pip_package:wheel (0 packages loaded, 52392 targets configured).
 ERROR: C:/users/hcktest/desktop/mugunth/source/tensorflow/tensorflow/python/BUILD:1570:15: Linking tensorflow/python/_pywrap_tensorflow_common.dll failed: (Exit 1): lld-link.exe failed: error executing CppLink command (from target //tensorflow/python:_pywrap_tensorflow_common.dll)
   cd /d C:/users/hcktest/_bazel_hcktest/b73u5zlo/execroot/org_tensorflow
   SET CLANG_COMPILER_PATH=C:/Program Files/LLVM/bin/clang-cl.exe
@@ -57,7 +40,7 @@ ERROR: C:/users/hcktest/desktop/mugunth/source/tensorflow/tensorflow/python/BUIL
     SET TF2_BEHAVIOR=1
     SET TMP=C:\Users\HCKTest\AppData\Local\Temp
   C:\Program Files\LLVM\bin\lld-link.exe @bazel-out/arm64_windows-opt/bin/tensorflow/python/_pywrap_tensorflow_common.dll-2.params
-# Configuration: 70d4cf22841e7a93d3172c6450279bbd0dc1312cb477fef9218da70eb451b0e3
+# Configuration: de500abd4431a17b7131b0a0266533e95c8ac0587082a20f913ed20ef688ec3a
 # Execution platform: //tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64
 lld-link: warning: ignoring unknown argument '-lpthread'
 lld-link: warning: ignoring unknown argument '-ldl'
@@ -1139,10 +1122,10 @@ ERROR: C:/users/hcktest/desktop/mugunth/source/tensorflow/tensorflow/tools/pip_p
     SET TF2_BEHAVIOR=1
     SET TMP=C:\Users\HCKTest\AppData\Local\Temp
   C:\Program Files\LLVM\bin\lld-link.exe @bazel-out/arm64_windows-opt/bin/tensorflow/python/_pywrap_tensorflow_common.dll-2.params
-# Configuration: 70d4cf22841e7a93d3172c6450279bbd0dc1312cb477fef9218da70eb451b0e3
+# Configuration: de500abd4431a17b7131b0a0266533e95c8ac0587082a20f913ed20ef688ec3a
 # Execution platform: //tensorflow/tools/toolchains/win2022:windows_ltsc2022_arm64
-INFO: Elapsed time: 538.547s, Critical Path: 407.91s
-INFO: 4 processes: 2 internal, 2 local.
+INFO: Elapsed time: 155.899s, Critical Path: 24.03s
+INFO: 1699 processes: 117 internal, 1582 local.
 ERROR: Build did NOT complete successfully
 
 C:\Users\HCKTest\Desktop\Mugunth\source\tensorflow>
