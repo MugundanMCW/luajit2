@@ -52,7 +52,6 @@
 #include "llvm/Support/Casting.h"
 #include "llvm/Support/CodeGen.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Debug.h"
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/LEB128.h"
 #include "llvm/Support/MathExtras.h"
@@ -1022,17 +1021,10 @@ bool AArch64InstrInfo::canInsertSelect(const MachineBasicBlock &MBB,
     // Single-cycle csel, csinc, csinv, and csneg.
     CondCycles = 1 + ExtraCondLat;
     TrueCycles = FalseCycles = 1;
-    if (canFoldIntoCSel(MRI, TrueReg)) {
-      TrueCycles = 0;
-      LLVM_DEBUG(dbgs() << "[canInsertSelect] TrueReg is foldable into CSel, TrueCycles=0\n");
-    }
-    if (canFoldIntoCSel(MRI, FalseReg)) {
-      FalseCycles = 0;
-      LLVM_DEBUG(dbgs() << "[canInsertSelect] FalseReg is foldable into CSel, FalseCycles=0\n");
-    }
-    LLVM_DEBUG(dbgs() << "[canInsertSelect] CondCycles=" << CondCycles
-                      << " TrueCycles=" << TrueCycles
-                      << " FalseCycles=" << FalseCycles << "\n");
+  if (canFoldIntoCSel(MRI, TrueReg))
+    TrueCycles = 0;
+  if (canFoldIntoCSel(MRI, FalseReg))
+    FalseCycles = 0;
     return true;
   }
 
@@ -1279,20 +1271,13 @@ void AArch64InstrInfo::insertSelect(MachineBasicBlock &MBB,
     unsigned TrueFoldOpc  = canFoldIntoCSel(MRI, TrueReg,  &NewTrueReg);
     unsigned FalseFoldOpc = canFoldIntoCSel(MRI, FalseReg, &NewFalseReg);
 
-    LLVM_DEBUG(dbgs() << "[insertSelect] TrueFoldOpc="  << TrueFoldOpc
-                      << " FalseFoldOpc=" << FalseFoldOpc << "\n");
-
     if (TrueFoldOpc && FalseFoldOpc) {
       // Both sides are foldable. Hardware can only fold into Rm (slot 2), so
       // emit two chained CSEL-family instructions:
       //   TmpReg = TrueFoldOpc(FalseReg, NewTrueReg, InvCC)  -- folds TrueReg
       //   DstReg = FalseFoldOpc(TmpReg,  NewFalseReg, CC)    -- folds FalseReg
-      LLVM_DEBUG(dbgs() << "[insertSelect] BOTH sides foldable -> emitting two chained CSELs\n");
       Register TmpReg = MRI.createVirtualRegister(RC);
       AArch64CC::CondCode InvCC = AArch64CC::getInvertedCondCode(CC);
-      LLVM_DEBUG(dbgs() << "[insertSelect] Instr1: opcode=" << TrueFoldOpc
-                        << " Rn=FalseReg Rm=NewTrueReg(" << NewTrueReg
-                        << ") CC=InvCC(" << (unsigned)InvCC << ")\n");
       BuildMI(MBB, I, DL, get(TrueFoldOpc), TmpReg)
           .addReg(FalseReg)
           .addReg(NewTrueReg)
@@ -1302,14 +1287,10 @@ void AArch64InstrInfo::insertSelect(MachineBasicBlock &MBB,
       TrueReg  = TmpReg;
       FalseReg = NewFalseReg;
       Opc      = FalseFoldOpc;
-      MRI.clearKillFlags(NewFalseReg);
-      LLVM_DEBUG(dbgs() << "[insertSelect] Instr2: opcode=" << FalseFoldOpc
-                        << " Rn=TmpReg Rm=NewFalseReg(" << NewFalseReg
-                        << ") CC=" << (unsigned)CC << "\n");
+        MRI.clearKillFlags(NewFalseReg);
     } else if (TrueFoldOpc) {
       // Only TrueReg is foldable. The fold operation applies to Rm (slot 2),
       // so invert the condition and swap Rn/Rm to place it correctly.
-      LLVM_DEBUG(dbgs() << "[insertSelect] Only TrueReg foldable -> inverting CC and swapping Rn/Rm\n");
       CC       = AArch64CC::getInvertedCondCode(CC);
       TrueReg  = FalseReg;
       FalseReg = NewTrueReg;
@@ -1317,12 +1298,9 @@ void AArch64InstrInfo::insertSelect(MachineBasicBlock &MBB,
       MRI.clearKillFlags(NewTrueReg);
     } else if (FalseFoldOpc) {
       // Only FalseReg is foldable. Direct fold into Rm, no swap needed.
-      LLVM_DEBUG(dbgs() << "[insertSelect] Only FalseReg foldable -> direct fold, no swap\n");
       FalseReg = NewFalseReg;
       Opc      = FalseFoldOpc;
       MRI.clearKillFlags(NewFalseReg);
-    } else {
-      LLVM_DEBUG(dbgs() << "[insertSelect] Neither side foldable -> plain CSEL\n");
     }
   }
 
