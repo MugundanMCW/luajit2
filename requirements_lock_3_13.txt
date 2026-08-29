@@ -1,4 +1,20 @@
-:\Program Files\LLVM\bin\lld-link.exe @bazel-out/arm64_windows-opt/bin/jaxlib/jax_common.dll-0.params
+no_nccl_support=true --define=tensorflow_mkldnn_contraction_kernel=0 --define=build_with_mkl_aarch64=false --define=ynn_enable_arm64_neonfp8=false --define=ynn_enable_arm64_sme=false --define=ynn_enable_arm64_sme2=false --define=no_cuda_support=true --define=no_rocm_support=true
+INFO: Found applicable config definition common:clang_local in file c:\users\hcktest\desktop\mugundan\jax\.bazelrc: --noincompatible_enable_cc_toolchain_resolution --@rules_ml_toolchain//common:enable_hermetic_cc=False --repo_env USE_HERMETIC_CC_TOOLCHAIN=0
+INFO: Found applicable config definition common:clang in file c:\users\hcktest\desktop\mugundan\jax\.bazelrc: --copt=-Wno-gnu-offsetof-extensions --copt=-Qunused-arguments --copt=-Werror=mismatched-tags --copt=-Wno-error=c23-extensions
+INFO: Found applicable config definition common:windows in file c:\users\hcktest\desktop\mugundan\jax\.bazelrc: --features=compiler_param_file --features=archive_param_file --copt=/D_USE_MATH_DEFINES --host_copt=/D_USE_MATH_DEFINES --copt=-DWIN32_LEAN_AND_MEAN --host_copt=-DWIN32_LEAN_AND_MEAN --copt=-DNOGDI --host_copt=-DNOGDI --copt=/Zc:preprocessor --cxxopt=/std:c++17 --host_cxxopt=/std:c++17 --linkopt=/DEBUG --host_linkopt=/DEBUG --linkopt=/OPT:REF --host_linkopt=/OPT:REF --linkopt=/OPT:ICF --host_linkopt=/OPT:ICF --incompatible_strict_action_env=true
+DEBUG: C:/users/hcktest/_bazel_hcktest/r6gauz52/external/rules_swift+/swift/internal/swift_autoconfiguration.bzl:355:14: No 'swiftc.exe' executable found in $PATH. Not auto-generating a Windows Swift toolchain.
+INFO: Analyzed target //jaxlib/tools:jaxlib_wheel (536 packages loaded, 44727 targets configured).
+ERROR: C:/users/hcktest/desktop/mugundan/jax/jaxlib/BUILD:152:15: Linking jaxlib/jax_common.dll failed: (Exit 1): lld-link.exe failed: error executing CppLink command (from target //jaxlib:jax_common.dll)
+  cd /d C:/users/hcktest/_bazel_hcktest/r6gauz52/execroot/_main
+  SET GRPC_BAZEL_RUNTIME=1
+    SET LIB=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\ATLMFC\lib\arm64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\lib\arm64;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\lib\um\arm64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.26100.0\ucrt\arm64;C:\Program Files (x86)\Windows Kits\10\\lib\10.0.26100.0\\um\arm64;C:\Program Files\LLVM\lib\clang\21\lib\windows
+    SET PATH=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\HostX64\arm64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\VCPackages;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TestWindow;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer;C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\bin\Roslyn;C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\x64\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\FSharp\Tools;C:\Program Files\Microsoft Visual Studio\2022\Community\Team Tools\DiagnosticsHub\Collector;C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\\x64;C:\Program Files (x86)\Windows Kits\10\bin\\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\\MSBuild\Current\Bin\arm64;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\;;C:\windows\system32;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\CMake\bin;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\CMake\Ninja;C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\VC\Linux\bin\ConnectionManagerExe;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\vcpkg
+    SET PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=upb
+    SET PWD=/proc/self/cwd
+    SET RUNFILES_MANIFEST_ONLY=1
+    SET TEMP=C:\Users\HCKTest\AppData\Local\Temp
+    SET TMP=C:\Users\HCKTest\AppData\Local\Temp
+  C:\Program Files\LLVM\bin\lld-link.exe @bazel-out/arm64_windows-opt/bin/jaxlib/jax_common.dll-0.params
 # Configuration: 01730af15215af9e48be07b2ed1d4da4f0c002b3d6fdf49d957b0088b3d84df1
 # Execution platform: //jax/tools/toolchains:arm64_windows-clang-cl
 lld-link: warning: py_client.lib(py_values.obj): locally defined symbol imported: struct std::atomic<int> tsl::profiler::internal::g_trace_level (defined in traceme_recorder_impl.lo.lib(traceme_recorder.obj)) [LNK4217]
@@ -111,22 +127,6 @@ lld-link: warning: _profiler_pywrap_library.lib(profiler.obj): locally defined s
 lld-link: warning: _profiler_pywrap_library.lib(profiler.obj): locally defined symbol imported: struct std::atomic<unsigned __int64> tsl::profiler::internal::g_trace_filter_bitmap (defined in traceme_recorder_impl.lo.lib(traceme_recorder.obj)) [LNK4217]
 lld-link: warning: threadpool_listener.lib(threadpool_listener.obj): locally defined symbol imported: struct std::atomic<bool> tsl::profiler::g_enable_source_location (defined in traceme_global_flags.lo.lib(traceme_global_flags.obj)) [LNK4217]
 lld-link: warning: python_hooks.lo.lib(python_hooks.obj): locally defined symbol imported: struct std::atomic<bool> xla::profiler::traceme_enabled (defined in traceme_state.lib(traceme_state.obj)) [LNK4217]
-lld-link: error: undefined symbol: LLVMInitializeX86TargetInfo
->>> referenced by cpu_compiler_pure.lib(cpu_compiler.obj):(public: <auto> __cdecl `public: __cdecl xla::cpu::CpuCompiler::CpuCompiler(void)'::`1'::<lambda_21>::operator()(void) const)
->>> referenced by cpu_compiler_pure.lib(cpu_compiler.obj):(private: static void __cdecl xla::cpu::CpuCompiler::InitializeLLVMTarget(void))
-
-lld-link: error: undefined symbol: LLVMInitializeX86Target
->>> referenced by cpu_compiler_pure.lib(cpu_compiler.obj):(public: <auto> __cdecl `public: __cdecl xla::cpu::CpuCompiler::CpuCompiler(void)'::`1'::<lambda_21>::operator()(void) const)
->>> referenced by cpu_compiler_pure.lib(cpu_compiler.obj):(private: static void __cdecl xla::cpu::CpuCompiler::InitializeLLVMTarget(void))
-
-lld-link: error: undefined symbol: LLVMInitializeX86TargetMC
->>> referenced by cpu_compiler_pure.lib(cpu_compiler.obj):(public: <auto> __cdecl `public: __cdecl xla::cpu::CpuCompiler::CpuCompiler(void)'::`1'::<lambda_21>::operator()(void) const)
->>> referenced by cpu_compiler_pure.lib(cpu_compiler.obj):(private: static void __cdecl xla::cpu::CpuCompiler::InitializeLLVMTarget(void))
-
-lld-link: error: undefined symbol: LLVMInitializeX86AsmPrinter
->>> referenced by cpu_compiler_pure.lib(cpu_compiler.obj):(public: <auto> __cdecl `public: __cdecl xla::cpu::CpuCompiler::CpuCompiler(void)'::`1'::<lambda_21>::operator()(void) const)
->>> referenced by cpu_compiler_pure.lib(cpu_compiler.obj):(private: static void __cdecl xla::cpu::CpuCompiler::InitializeLLVMTarget(void))
-
 lld-link: error: undefined symbol: public: void __cdecl Xbyak_aarch64::CodeGenerator::mov(class Xbyak_aarch64::XReg const &, unsigned __int64)
 >>> referenced by onednn_cpu.lib(jit_io_helper.obj):(public: void __cdecl dnnl::impl::cpu::aarch64::io::jit_io_helper_t<class Xbyak_aarch64::ZReg>::prepare_tail_mask(void))
 >>> referenced by onednn_cpu.lib(jit_io_helper.obj):(private: void __cdecl dnnl::impl::cpu::aarch64::io::jit_io_helper_t<class Xbyak_aarch64::ZReg>::prepare_opmask(unsigned __int64, class Xbyak_aarch64::XReg const &, class Xbyak_aarch64::XReg const &, class Xbyak_aarch64::PReg const &))
@@ -217,15 +217,36 @@ lld-link: error: undefined symbol: public: void __cdecl Xbyak_aarch64::CodeGener
 >>> referenced by onednn_cpu.lib(jit_uni_i8i8_pooling.obj):(public: void __cdecl dnnl::impl::cpu::aarch64::jit_uni_i8i8_pooling_fwd_ker_t<31>::load_src_avg_op(int, int, unsigned __int64, bool, unsigned __int64))
 >>> referenced 6 more times
 
+lld-link: error: undefined symbol: public: void __cdecl Xbyak_aarch64::CodeGenerator::uxtb(class Xbyak_aarch64::ZRegS const &, class Xbyak_aarch64::_PReg const &, class Xbyak_aarch64::ZRegS const &)
+>>> referenced by onednn_cpu.lib(jit_io_helper.obj):(private: void __cdecl dnnl::impl::cpu::aarch64::io::jit_io_helper_t<class Xbyak_aarch64::ZReg>::convert_to_f32(class Xbyak_aarch64::ZReg const &, class Xbyak_aarch64::ZReg const &, enum dnnl_data_type_t))
+>>> referenced by onednn_cpu.lib(jit_uni_reorder_kernel.obj):(public: void __cdecl dnnl::impl::cpu::aarch64::tr::jit_uni_reorder_kernel_f32_t::cvt_z_u8_s32(unsigned __int64, unsigned __int64))
+>>> referenced by onednn_cpu.lib(jit_uni_i8i8_pooling.obj):(public: void __cdecl dnnl::impl::cpu::aarch64::jit_uni_i8i8_pooling_fwd_ker_t<31>::load_src_avg_op(int, int, unsigned __int64, bool, unsigned __int64))
+>>> referenced 7 more times
+
+lld-link: error: undefined symbol: public: void __cdecl Xbyak_aarch64::CodeGenerator::ld1rw(class Xbyak_aarch64::ZRegS const &, class Xbyak_aarch64::_PReg const &, class Xbyak_aarch64::AdrNoOfs const &)
+>>> referenced by onednn_cpu.lib(jit_io_helper.obj):(public: void __cdecl dnnl::impl::cpu::aarch64::io::jit_io_helper_t<class Xbyak_aarch64::ZReg>::broadcast(class Xbyak_aarch64::XReg const &, int, class Xbyak_aarch64::ZReg const &))
+>>> referenced by onednn_cpu.lib(jit_io_helper.obj):(public: void __cdecl dnnl::impl::cpu::aarch64::io::jit_io_helper_t<class Xbyak_aarch64::ZReg>::broadcast(class Xbyak_aarch64::XReg const &, int, class Xbyak_aarch64::ZReg const &))
+>>> referenced by onednn_cpu.lib(jit_int8_matmul.obj):(public: void __cdecl dnnl::impl::cpu::aarch64::matmul::jit_int8_matmul_kernel_t<15>::store_regs(int, int, int))
+>>> referenced 76 more times
+
+lld-link: error: undefined symbol: public: void __cdecl Xbyak_aarch64::CodeGenerator::ldrb(class Xbyak_aarch64::WReg const &, class Xbyak_aarch64::AdrUimm const &)
+>>> referenced by onednn_cpu.lib(jit_io_helper.obj):(public: void __cdecl dnnl::impl::cpu::aarch64::io::jit_io_helper_t<class Xbyak_aarch64::ZReg>::broadcast(class Xbyak_aarch64::XReg const &, int, class Xbyak_aarch64::ZReg const &))
+>>> referenced by onednn_cpu.lib(jit_uni_shuffle_kernel.obj):(public: virtual void __cdecl dnnl::impl::cpu::aarch64::jit_uni_shuffle_kernel_t<31>::generate(void))
+>>> referenced by onednn_cpu.lib(jit_uni_shuffle_kernel.obj):(public: virtual void __cdecl dnnl::impl::cpu::aarch64::jit_uni_shuffle_kernel_t<15>::generate(void))
+>>> referenced 9 more times
+
+lld-link: error: undefined symbol: public: void __cdecl Xbyak_aarch64::CodeGenerator::mov(class Xbyak_aarch64::VReg16B const &, class Xbyak_aarch64::VReg16B const &)
+>>> referenced by onednn_cpu.lib(jit_io_helper.obj):(public: void __cdecl dnnl::impl::cpu::aarch64::io::jit_io_helper_t<class Xbyak_aarch64::ZReg>::broadcast(class Xbyak_aarch64::XReg const &, int, class Xbyak_aarch64::ZReg const &))
+>>> referenced by onednn_cpu.lib(jit_uni_softmax.obj):(public: void __cdecl dnnl::impl::cpu::aarch64::jit_softmax_asimd_t::load(class Xbyak_aarch64::VReg const &, class Xbyak_aarch64::XReg const &, enum dnnl_data_type_t, bool, class Xbyak_aarch64::VReg const &))
+>>> referenced by onednn_cpu.lib(jit_uni_softmax.obj):(public: virtual void __cdecl dnnl::impl::cpu::aarch64::jit_softmax_asimd_t::accumulate_vmax(void))
+>>> referenced 12 more times
+
 lld-link: error: too many errors emitted, stopping now (use /errorlimit:0 to see all errors)
 Target //jaxlib/tools:jaxlib_wheel failed to build
-INFO: Elapsed time: 3221.570s, Critical Path: 137.85s
-INFO: 15467 processes: 363 internal, 15104 local.
+INFO: Elapsed time: 90.955s, Critical Path: 66.47s
+INFO: 5 processes: 23780 action cache hit, 2 internal, 3 local.
 ERROR: Build did NOT complete successfully
 
 C:\Users\HCKTest\Desktop\Mugundan\jax>
-
-
-
-
+C:\Users\HCKTest\Desktop\Mugundan\jax>
 
