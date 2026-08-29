@@ -1,0 +1,29 @@
+diff --git a/third_party/mkl_dnn/gemm_bfloat16_namespace.patch b/third_party/mkl_dnn/gemm_bfloat16_namespace.patch
+new file mode 100644
+--- /dev/null
++++ b/third_party/mkl_dnn/gemm_bfloat16_namespace.patch
+@@ -0,0 +1,11 @@
++diff --git a/src/cpu/gemm/gemm.cpp b/src/cpu/gemm/gemm.cpp
++--- a/src/cpu/gemm/gemm.cpp
+++++ b/src/cpu/gemm/gemm.cpp
++@@ -286,5 +286,6 @@
++ dnnl_status_t gemm_bf16bf16f32(const char *transa, const char *transb,
++         const dim_t *M, const dim_t *N, const dim_t *K, const float *alpha,
++-        const bfloat16_t *A, const dim_t *lda, const bfloat16_t *B,
+++        const dnnl::impl::bfloat16_t *A, const dim_t *lda,
+++        const dnnl::impl::bfloat16_t *B,
++         const dim_t *ldb, const float *beta, float *C, const dim_t *ldc) {
++     dnnl_status_t status = check_gemm_input(transa, transb, M, N, K, A, lda, B,
+diff --git a/third_party/mkl_dnn/workspace.bzl b/third_party/mkl_dnn/workspace.bzl
+--- a/third_party/mkl_dnn/workspace.bzl
++++ b/third_party/mkl_dnn/workspace.bzl
+@@ -33,8 +33,9 @@
+         # Rename the gtest module in oneDNN's third_party to avoid
+         # conflict with Google's gtest module
+         patch_file = [
+             "//third_party/mkl_dnn:setting_tsan_race_v3_12_3.patch",
+             "//third_party/mkl_dnn:rename_gtest.patch",
++            "//third_party/mkl_dnn:gemm_bfloat16_namespace.patch",
+         ],
+         sha256 = "12d8551668515c64adae2b26e5ebeeefa48b1ad1035717fe8718fd702c5e066b",
+         strip_prefix = "oneDNN-3.12.3",
