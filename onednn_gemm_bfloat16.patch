@@ -2,7 +2,7 @@ diff --git a/third_party/mkl_dnn/gemm_bfloat16_namespace.patch b/third_party/mkl
 new file mode 100644
 --- /dev/null
 +++ b/third_party/mkl_dnn/gemm_bfloat16_namespace.patch
-@@ -0,0 +1,11 @@
+@@ -0,0 +1,20 @@
 +diff --git a/src/cpu/gemm/gemm.cpp b/src/cpu/gemm/gemm.cpp
 +--- a/src/cpu/gemm/gemm.cpp
 ++++ b/src/cpu/gemm/gemm.cpp
@@ -14,6 +14,15 @@ new file mode 100644
 ++        const dnnl::impl::bfloat16_t *B,
 +         const dim_t *ldb, const float *beta, float *C, const dim_t *ldc) {
 +     dnnl_status_t status = check_gemm_input(transa, transb, M, N, K, A, lda, B,
++@@ -293,6 +294,6 @@
++ #if DNNL_X64 && !__BUILD_GEMM_NONE
++     char *dummyOffsetC = nullptr;
++-    bfloat16_t *dummy_ao = nullptr;
++-    bfloat16_t *dummy_bo = nullptr;
+++    dnnl::impl::bfloat16_t *dummy_ao = nullptr;
+++    dnnl::impl::bfloat16_t *dummy_bo = nullptr;
++     float *dummy_co = nullptr;
++ 
 diff --git a/third_party/mkl_dnn/workspace.bzl b/third_party/mkl_dnn/workspace.bzl
 --- a/third_party/mkl_dnn/workspace.bzl
 +++ b/third_party/mkl_dnn/workspace.bzl
