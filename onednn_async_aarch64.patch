@@ -12,7 +12,7 @@ diff --git a/third_party/mkl_dnn/mkldnn_v1_async.BUILD b/third_party/mkl_dnn/mkl
      copts = [
          "-O1",
          "-U_FORTIFY_SOURCE",
-@@ -265,30 +268,35 @@
+@@ -265,30 +268,38 @@
      srcs = glob(
          [
              "src/common/*.cpp",
@@ -42,7 +42,10 @@ diff --git a/third_party/mkl_dnn/mkldnn_v1_async.BUILD b/third_party/mkl_dnn/mkl
          ],
 -    ),
 +    ) + select({
-+        "@xla//xla/tsl:aarch64_or_cross": glob(["src/cpu/aarch64/**/*.cpp"]),
++        "@xla//xla/tsl:aarch64_or_cross": glob(
++            ["src/cpu/aarch64/**/*.cpp"],
++            exclude = ["src/cpu/aarch64/**/acl_*.cpp"],
++        ),
 +        "//conditions:default": glob(
 +            ["src/cpu/x64/**/*.cpp"],
 +            exclude = ["src/cpu/x64/gemm/**/*_kern_autogen.cpp"],
@@ -51,7 +54,7 @@ diff --git a/third_party/mkl_dnn/mkldnn_v1_async.BUILD b/third_party/mkl_dnn/mkl
      copts = _COPTS_LIST + [
          "-DDNNL_ENABLE_ITT_TASKS",  # Enable ITT for CPU
      ],
-@@ -315,44 +323,49 @@
+@@ -315,44 +323,52 @@
      srcs = glob(
          [
              "src/common/*.cpp",
@@ -95,7 +98,10 @@ diff --git a/third_party/mkl_dnn/mkldnn_v1_async.BUILD b/third_party/mkl_dnn/mkl
          ],
 -    ) + [
 +    ) + select({
-+        "@xla//xla/tsl:aarch64_or_cross": glob(["src/cpu/aarch64/**/*.cpp"]),
++        "@xla//xla/tsl:aarch64_or_cross": glob(
++            ["src/cpu/aarch64/**/*.cpp"],
++            exclude = ["src/cpu/aarch64/**/acl_*.cpp"],
++        ),
 +        "//conditions:default": glob(
 +            ["src/cpu/x64/**/*.cpp"],
 +            exclude = ["src/cpu/x64/gemm/**/*_kern_autogen.cpp"],
