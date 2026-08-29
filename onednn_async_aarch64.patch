@@ -12,7 +12,7 @@ diff --git a/third_party/mkl_dnn/mkldnn_v1_async.BUILD b/third_party/mkl_dnn/mkl
      copts = [
          "-O1",
          "-U_FORTIFY_SOURCE",
-@@ -265,30 +268,40 @@
+@@ -265,30 +268,41 @@
      srcs = glob(
          [
              "src/common/*.cpp",
@@ -57,7 +57,7 @@ diff --git a/third_party/mkl_dnn/mkldnn_v1_async.BUILD b/third_party/mkl_dnn/mkl
      copts = _COPTS_LIST + [
          "-DDNNL_ENABLE_ITT_TASKS",  # Enable ITT for CPU
      ],
-@@ -315,44 +323,54 @@
+@@ -315,44 +323,55 @@
      srcs = glob(
          [
              "src/common/*.cpp",
