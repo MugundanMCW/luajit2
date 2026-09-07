@@ -346,7 +346,6 @@ jobs:
           -DGGML_NATIVE=OFF
           -DWHISPER_BUILD_IS_DEV=${{ env.WHISPER_BUILD_IS_DEV }}
           -DGGML_BACKEND_DL=ON
-          -DGGML_CPU_ALL_VARIANTS=ON
 
       - name: Build
         run: |
