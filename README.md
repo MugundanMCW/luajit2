@@ -1,70 +1,55 @@
-# CFG Learning Deck
+Here is a complete breakdown of what the CI workflows do for building and publishing wheels:
 
-A 30-slide beginner-friendly Markdown presentation that teaches **Control
-Flow Graphs (CFGs)** from first principles up through LLVM IR, dominance,
-loops, and SSA/PHI nodes.
+---
 
-File: [`CFG-Learning-Deck.md`](./CFG-Learning-Deck.md)
+## Wheel Building
 
-The deck is written as a [Marp](https://marp.app/) Markdown deck (slides are
-separated by `---`, with a YAML frontmatter block at the top configuring the
-theme). It renders equally well as plain Markdown if you just want to read
-it top to bottom.
+### `.github/workflows/test-rust.yml` — "LiteLLM Rust" (the primary wheel-build workflow)
 
-## Rendering the deck
+**Trigger:** `push` or `pull_request` on paths touching `litellm-rust/**`, `pyproject.toml`, `rust-toolchain.toml`, or related scripts.
 
-### Option 1: Marp CLI (recommended — HTML or PDF slides)
+**What it does in the `rust-test` job:**
+1. Runs `cargo test` across the workspace
+2. **`uv build --wheel --out-dir dist`** — builds the main native wheel. `uv build` delegates to **maturin** (the build backend declared in `pyproject.toml`) which compiles the `litellm-python-bridge` Rust crate into a `.whl` file.
+3. Verifies the wheel: `python .github/scripts/verify_linux_native_wheel.py dist/*.whl`
+4. Runs wheel integration tests: `python tests/test_litellm/rust_bridge/native_route_wheel_test.py dist/*.whl`
+5. Runs pytest against the compiled extension: `make test-rust-extension`
+6. Builds a second "panic-test" wheel: `uv build --wheel --out-dir panic-dist --config-setting "maturin.build-args=--features panic-test,extension-module"`
+7. Smoke-tests it: `python .github/scripts/smoke_test_native_wheel.py panic-dist/*.whl`
 
-```bash
-npm install -g @marp-team/marp-cli
+This is a **CI validation workflow only** — the wheels are built and tested but not published anywhere.
 
-# Render to a self-contained HTML slideshow
-marp CFG-Learning-Deck.md -o deck.html
+### `.github/workflows/codspeed.yml` — "CodSpeed Benchmarks"
 
-# Render to PDF
-marp CFG-Learning-Deck.md -o deck.pdf --allow-local-files
+**Trigger:** `push`/`pull_request` to `main`/`litellm_internal_staging` on paths touching `litellm/**`, `tests/benchmarks/**`, `pyproject.toml`, or `uv.lock`.
 
-# Live preview while editing
-marp -s CFG-Learning-Deck.md
-```
+Builds the wheel implicitly via `uv run --frozen` (which triggers maturin to compile the Rust extension as part of the editable install). The comment in the file explicitly notes this was moved out of the CodSpeed runner because the maturin build took 42 minutes inside `codspeed run` vs. under 3 minutes as a plain step. This is for **benchmarking only**, not distribution.
 
-### Option 2: VS Code
+---
 
-Install the **Marp for VS Code** extension, open
-`CFG-Learning-Deck.md`, and use the built-in preview pane (it renders slide
-boundaries and diagrams live).
+## Wheel Publishing
 
-### Option 3: Pandoc (reveal.js HTML)
+**There is no workflow that publishes wheels to PyPI.** A full scan of all 50 workflow files found zero occurrences of `pypi`, `twine upload`, `PYPI_TOKEN`, `pypi.org`, `uv publish`, or any trusted-publisher configuration. PyPI publishing is not automated through GitHub Actions in this repository.
 
-```bash
-pandoc CFG-Learning-Deck.md -t revealjs -s -o deck-revealjs.html \
-  --slide-level=2
-```
+---
 
-> Note: pandoc doesn't understand the Marp `<!-- Slide N -->` comments or
-> frontmatter styling; the `---` separators still split slides correctly,
-> but rendering will look plainer than with Marp.
+## GitHub Release (not wheel publishing)
 
-## Content overview
+### `.github/workflows/create-release.yml` — "Create Release"
 
-| Section | Slides | Topics |
-|---|---|---|
-| 1. Why CFG exists | 1–3 | Motivation, control flow, CFG definition |
-| 2. Basic Blocks | 4–6 | Basic block rules, leaders, building a CFG |
-| 3. CFG terminology | 7–8 | Vocabulary, predecessors/successors |
-| 4. Real-program CFGs | 9–16 | if/else, while, for, do-while, break/continue, switch, return/unreachable |
-| 5. LLVM IR level | 17–19 | IR basic blocks, terminators, `dot-cfg`/`viewCFG` |
-| 6. Dominance | 20–23 | Dominates, immediate dominator, dominator tree, dominance frontier |
-| 7. Loops | 24–25 | Back edges, natural loops, nested loops |
-| 8. CFG → SSA | 26–27 | PHI nodes, big-picture diagram |
-| 9. LLVM backend | 28 | `BasicBlock` vs `MachineBasicBlock`, `DominatorTree` vs `MachineDominatorTree` |
-| 10. Practical mastery | 29–30 | Universal CFG-drawing checklist, solved final challenge |
+**Trigger:** Manual `workflow_dispatch` with a tag and a 40-char commit SHA.
 
-Every important term from the terminology checklist (control flow, CFG,
-basic block, leader, entry/exit block, node, edge, predecessor, successor,
-terminator, fall-through, conditional/unconditional branch, join/merge,
-branch point, reachability, unreachable block, back edge, loop
-header/body/exit, natural loop, nested loop, dominance, strict dominance,
-immediate dominator, dominator tree, dominance frontier, SSA, PHI node,
-`BasicBlock`, `MachineBasicBlock`, `DominatorTree`, `MachineDominatorTree`)
-is explicitly introduced and explained with a worked example.
+Creates a GitHub release (git tag + auto-generated release notes + cosign Docker image verification section). It does **not** build or publish any wheels or packages. After creating the release it calls `create-release-branch.yml` to create a release branch.
+
+---
+
+## Summary
+
+| Workflow | Builds wheel? | Publishes wheel? | Tool used |
+|---|---|---|---|
+| `test-rust.yml` | ✅ Yes (CI validation) | ❌ No | `uv build --wheel` → maturin |
+| `codspeed.yml` | ✅ Implicitly (benchmarks) | ❌ No | `uv run --frozen` → maturin |
+| `create-release.yml` | ❌ No | ❌ No | GitHub API only |
+| All others | ❌ No | ❌ No | — |
+
+The build tool is **`uv build --wheel`** backed by **maturin** (the build backend configured in `pyproject.toml` for the Rust extension). There is currently no automated PyPI publish step in any workflow.
